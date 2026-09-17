@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load financeiro %}
+
+{% block title %}Filhos{% endblock %}
+{% block kicker %}Planilha{% endblock %}
+{% block heading %}Despesas dos filhos{% endblock %}
+
+{% block content %}
+<div class="acoes-pagina">
+    <div class="chips">
+        <a href="?ano={{ ano }}" class="{% if not request.GET.mes and not request.GET.filho %}ativo{% endif %}">Todos</a>
+        {% for filho in filhos %}
+            <a href="?ano={{ ano }}&filho={{ filho.pk }}{% if request.GET.mes %}&mes={{ request.GET.mes }}{% endif %}" class="{% if request.GET.filho == filho.pk|stringformat:'s' %}ativo{% endif %}">{{ filho.nome }}</a>
+        {% endfor %}
+        {% for numero, nome in meses_nav %}
+            <a href="?ano={{ ano }}&mes={{ numero }}{% if request.GET.filho %}&filho={{ request.GET.filho }}{% endif %}" class="{% if request.GET.mes == numero|stringformat:'s' %}ativo{% endif %}">{{ nome }}</a>
+        {% endfor %}
+    </div>
+    <div class="acoes">
+        <a class="botao-secundario" href="{% url 'filhos:filho_novo' %}">Novo filho</a>
+        <a class="botao" href="{% url 'filhos:nova' %}?ano={{ ano }}{% if request.GET.mes %}&mes={{ request.GET.mes }}{% endif %}{% if request.GET.filho %}&filho={{ request.GET.filho }}{% endif %}">Nova despesa</a>
+    </div>
+</div>
+
+<div class="card">
+    <p class="totais">Total {{ total|brl }} · À pagar <span data-a-pagar data-a-pagar-valor="{{ a_pagar }}">{{ a_pagar|brl }}</span></p>
+    <div class="tabela-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Filho</th>
+                    <th>Mês</th>
+                    <th>Descrição</th>
+                    <th>Valor</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for despesa in despesas %}
+                    <tr>
+                        <td>{{ despesa.filho.nome }}</td>
+                        <td>{{ despesa.get_mes_display }}</td>
+                        <td>{{ despesa.descricao }}</td>
+                        <td>{{ despesa.valor|brl }}</td>
+                        <td>
+                            {% url 'filhos:status' despesa.pk as status_url %}
+                            {% include "includes/seletor_status.html" with objeto=despesa url=status_url permite_cartao=True opcoes=status_choices valor=despesa.valor %}
+                        </td>
+                        <td class="acoes">
+                            <button type="button" class="botao-secundario botao-pequeno" data-duplicar="{% url 'filhos:duplicar' despesa.pk %}">Duplicar</button>
+                            <a class="botao-secundario botao-pequeno" href="{% url 'filhos:editar' despesa.pk %}">Editar</a>
+                            <a class="botao-perigo botao-pequeno" href="{% url 'filhos:excluir' despesa.pk %}">Excluir</a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="6">Nenhuma despesa cadastrada.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

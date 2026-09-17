@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load financeiro %}
+
+{% block title %}Início {{ ano }}{% endblock %}
+{% block kicker %}Visão geral{% endblock %}
+{% block heading %}Balanço de {{ ano }}{% endblock %}
+
+{% block content %}
+<section class="kpis">
+    <article class="card kpi">
+        <div class="rotulo">Receitas</div>
+        <div class="valor">{{ resumo.receita_total|brl }}</div>
+    </article>
+    <article class="card kpi">
+        <div class="rotulo">Despesas</div>
+        <div class="valor">{{ resumo.despesa_total|brl }}</div>
+    </article>
+    <article class="card kpi">
+        <div class="rotulo">Saldo</div>
+        <div class="valor {{ resumo.saldo|saldo_classe }}">{{ resumo.saldo|brl }}</div>
+    </article>
+    <article class="card kpi">
+        <div class="rotulo">Ainda a pagar</div>
+        <div class="valor saldo-negativo">{{ resumo.a_pagar_total|brl }}</div>
+    </article>
+</section>
+
+<div class="grade-2">
+    <section>
+        <div class="meses">
+            {% for mes in resumo.meses %}
+                <article class="card mes-card">
+                    <h2>{{ mes.nome }}</h2>
+                    {% for chave, cat in mes.categorias.items %}
+                        <div class="linha">
+                            <span>{{ cat.nome }}</span>
+                            <span>{{ cat.total|brl }} <small class="muted">à pagar {{ cat.a_pagar|brl }}</small></span>
+                        </div>
+                    {% endfor %}
+                    <div class="linha">
+                        <strong>Receita</strong>
+                        <strong>{{ mes.receita_total|brl }}</strong>
+                    </div>
+                    <div class="linha">
+                        <strong>Saldo</strong>
+                        <strong class="{{ mes.saldo|saldo_classe }}">{{ mes.saldo|brl }}</strong>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    </section>
+
+    <aside class="card">
+        <h2>Contas em aberto</h2>
+        <p class="ajuda">{{ abertos_total }} lançamento(s) · {{ abertos_valor|brl }}</p>
+        <ul class="lista-abertos">
+            {% for item in abertos %}
+                <li>
+                    <div>
+                        <strong>{{ item.descricao }}</strong>
+                        <div class="muted">{{ item.origem }} · {{ item.mes|stringformat:"02d" }}/{{ ano }}</div>
+                    </div>
+                    <span>{{ item.valor|brl }}</span>
+                </li>
+            {% empty %}
+                <li>Nenhuma conta em aberto neste ano.</li>
+            {% endfor %}
+        </ul>
+    </aside>
+</div>
+{% endblock %}

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load financeiro %}
+
+{% block title %}{{ fatura }}{% endblock %}
+{% block kicker %}Cartões{% endblock %}
+{% block heading %}{{ fatura.cartao.nome }} · {{ fatura.get_mes_display }}/{{ fatura.ano }}{% endblock %}
+
+{% block content %}
+<div class="acoes-pagina">
+    <p class="totais">
+        Total {{ total|brl }} ·
+        <span class="{{ fatura.status|status_classe }}">{{ fatura.get_status_display }}</span>
+    </p>
+    <a class="botao-secundario" href="{% url 'cartoes:lista' %}">Voltar</a>
+</div>
+
+<div class="grade-2">
+    <section class="card">
+        <div class="tabela-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Descrição</th>
+                        <th>Valor</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in fatura.itens.all %}
+                        <tr>
+                            <td>{{ item.descricao }}</td>
+                            <td>{{ item.valor|brl }}</td>
+                        <td class="acoes">
+                            <button type="button" class="botao-secundario botao-pequeno" data-duplicar="{% url 'cartoes:item_duplicar' item.pk %}">Duplicar</button>
+                            <form method="post" action="{% url 'cartoes:item_excluir' item.pk %}">
+                                {% csrf_token %}
+                                <button class="botao-perigo botao-pequeno" type="submit">Excluir</button>
+                            </form>
+                        </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="3">Nenhum item nesta fatura.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="card formulario">
+        <h2>Adicionar item</h2>
+        <form method="post" action="{% url 'cartoes:item_novo' fatura.pk %}">
+            {% csrf_token %}
+            {% for campo in form_item %}
+                <div class="campo">
+                    <label for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+                    {{ campo }}
+                </div>
+            {% endfor %}
+            <button class="botao" type="submit">Incluir</button>
+        </form>
+    </section>
+</div>
+{% endblock %}

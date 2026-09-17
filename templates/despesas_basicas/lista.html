@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load financeiro %}
+
+{% block title %}Despesas básicas{% endblock %}
+{% block kicker %}Planilha{% endblock %}
+{% block heading %}Despesas básicas{% endblock %}
+
+{% block content %}
+<div class="acoes-pagina">
+    <div class="chips">
+        <a href="?ano={{ ano }}" class="{% if not request.GET.mes %}ativo{% endif %}">Todos</a>
+        {% for numero, nome in meses_nav %}
+            <a href="?ano={{ ano }}&mes={{ numero }}" class="{% if request.GET.mes == numero|stringformat:'s' %}ativo{% endif %}">{{ nome }}</a>
+        {% endfor %}
+    </div>
+    <a class="botao" href="{% url 'despesas_basicas:nova' %}?ano={{ ano }}{% if request.GET.mes %}&mes={{ request.GET.mes }}{% endif %}">Nova despesa</a>
+</div>
+
+<div class="card">
+    <p class="totais">Total {{ total|brl }} · À pagar <span data-a-pagar data-a-pagar-valor="{{ a_pagar }}">{{ a_pagar|brl }}</span></p>
+    <div class="tabela-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Mês</th>
+                    <th>Descrição</th>
+                    <th>Valor</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for despesa in despesas %}
+                    <tr>
+                        <td>{{ despesa.get_mes_display }}</td>
+                        <td>{{ despesa.descricao }}</td>
+                        <td>{{ despesa.valor|brl }}</td>
+                        <td>
+                            {% url 'despesas_basicas:status' despesa.pk as status_url %}
+                            {% include "includes/seletor_status.html" with objeto=despesa url=status_url permite_cartao=True opcoes=status_choices valor=despesa.valor %}
+                        </td>
+                        <td class="acoes">
+                            <button type="button" class="botao-secundario botao-pequeno" data-duplicar="{% url 'despesas_basicas:duplicar' despesa.pk %}">Duplicar</button>
+                            <a class="botao-secundario botao-pequeno" href="{% url 'despesas_basicas:editar' despesa.pk %}">Editar</a>
+                            <a class="botao-perigo botao-pequeno" href="{% url 'despesas_basicas:excluir' despesa.pk %}">Excluir</a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="5">Nenhuma despesa básica cadastrada.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

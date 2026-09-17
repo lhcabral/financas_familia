@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Novo cartão{% endblock %}
+{% block kicker %}Cartões{% endblock %}
+{% block heading %}Novo cartão{% endblock %}
+
+{% block content %}
+<section class="card formulario">
+    <form method="post">
+        {% csrf_token %}
+        {% for campo in form %}
+            <div class="campo">
+                <label for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+                {{ campo }}
+                {{ campo.errors }}
+            </div>
+        {% endfor %}
+        <div class="acoes">
+            <button class="botao" type="submit">Salvar</button>
+            <a class="botao-secundario" href="{% url 'cartoes:lista' %}">Cancelar</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

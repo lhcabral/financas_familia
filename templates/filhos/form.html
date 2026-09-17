@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}{% if form.instance.pk %}Editar despesa{% else %}Nova despesa do filho{% endif %}{% endblock %}
+{% block kicker %}Filhos{% endblock %}
+{% block heading %}{% if form.instance.pk %}Editar despesa{% else %}Nova despesa do filho{% endif %}{% endblock %}
+
+{% block content %}
+<section class="card formulario">
+    <form method="post">
+        {% csrf_token %}
+        {% for campo in form %}
+            <div class="campo">
+                <label for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+                {{ campo }}
+                {{ campo.errors }}
+            </div>
+        {% endfor %}
+        <div class="acoes">
+            <button class="botao" type="submit">Salvar</button>
+            <a class="botao-secundario" href="{% url 'filhos:lista' %}">Cancelar</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

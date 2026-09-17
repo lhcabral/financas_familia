@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Finanças da família{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="brand">
+                <span class="brand-mark">FF</span>
+                <div>
+                    <strong>Finanças</strong>
+                    <small>da família</small>
+                </div>
+            </div>
+            <nav class="menu">
+                <a href="{% url 'inicio:dashboard' %}?ano={{ ano_selecionado }}" class="{% if request.resolver_match.url_name == 'dashboard' %}ativo{% endif %}">Início</a>
+                <a href="{% url 'inicio:receitas' %}?ano={{ ano_selecionado }}" class="{% if 'receita' in request.resolver_match.url_name %}ativo{% endif %}">Receitas</a>
+                <a href="{% url 'despesas_basicas:lista' %}?ano={{ ano_selecionado }}" class="{% if request.resolver_match.app_name == 'despesas_basicas' %}ativo{% endif %}">Despesas básicas</a>
+                <a href="{% url 'filhos:lista' %}?ano={{ ano_selecionado }}" class="{% if request.resolver_match.app_name == 'filhos' %}ativo{% endif %}">Filhos</a>
+                <a href="{% url 'cartoes:lista' %}?ano={{ ano_selecionado }}" class="{% if request.resolver_match.app_name == 'cartoes' %}ativo{% endif %}">Cartões</a>
+                <a href="{% url 'imoveis_transporte:lista' %}?ano={{ ano_selecionado }}" class="{% if request.resolver_match.app_name == 'imoveis_transporte' %}ativo{% endif %}">Imóveis e transporte</a>
+            </nav>
+            <p class="sidebar-nota">Controle mensal com base na planilha de 2026.</p>
+        </aside>
+
+        <main class="conteudo">
+            <header class="topo">
+                <div>
+                    <p class="kicker">{% block kicker %}Família{% endblock %}</p>
+                    <h1>{% block heading %}{% endblock %}</h1>
+                </div>
+                <form class="filtro-ano" method="get">
+                    <label for="ano">Ano</label>
+                    <select id="ano" name="ano" onchange="this.form.submit()">
+                        {% for ano in anos_disponiveis %}
+                            <option value="{{ ano }}" {% if ano == ano_selecionado %}selected{% endif %}>{{ ano }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if request.GET.mes %}<input type="hidden" name="mes" value="{{ request.GET.mes }}">{% endif %}
+                    {% if request.GET.filho %}<input type="hidden" name="filho" value="{{ request.GET.filho }}">{% endif %}
+                    {% if request.GET.cartao %}<input type="hidden" name="cartao" value="{{ request.GET.cartao }}">{% endif %}
+                    {% if request.GET.consorcio %}<input type="hidden" name="consorcio" value="{{ request.GET.consorcio }}">{% endif %}
+                </form>
+            </header>
+
+            {% if messages %}
+                <div class="mensagens">
+                    {% for message in messages %}
+                        <p class="alerta alerta-{{ message.tags }}">{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <dialog id="modal-cartao" class="modal-cartao">
+        <form method="dialog">
+            <h3>Lançar no cartão</h3>
+            <p class="ajuda">A conta fica fechada e o valor entra na fatura do mesmo mês.</p>
+            <div id="lista-cartoes" class="lista-cartoes"></div>
+            <div class="acoes">
+                <button class="botao-secundario" value="cancel">Cancelar</button>
+                <button class="botao" value="ok">Confirmar</button>
+            </div>
+        </form>
+    </dialog>
+    <dialog id="modal-duplicar" class="modal-cartao modal-form">
+        <form id="form-duplicar" method="post">
+            <h3 id="titulo-duplicar">Duplicar</h3>
+            <p class="ajuda">Ajuste o que quiser antes de criar a cópia.</p>
+            <div id="campos-duplicar" class="formulario"></div>
+            <p class="alerta alerta-error" id="erro-duplicar" hidden></p>
+            <div class="acoes">
+                <button type="button" class="botao-secundario" id="cancelar-duplicar">Cancelar</button>
+                <button type="submit" class="botao">Criar cópia</button>
+            </div>
+        </form>
+    </dialog>
+    {{ cartoes_json|json_script:"cartoes-data" }}
+    <script src="{% static 'js/status.js' %}"></script>
+    <script src="{% static 'js/duplicar.js' %}"></script>
+</body>
+</html>

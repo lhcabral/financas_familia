@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load financeiro %}
+
+{% block title %}Cartões{% endblock %}
+{% block kicker %}Planilha{% endblock %}
+{% block heading %}Cartões e faturas{% endblock %}
+
+{% block content %}
+<div class="acoes-pagina">
+    <div class="chips">
+        <a href="?ano={{ ano }}" class="{% if not request.GET.mes and not request.GET.cartao %}ativo{% endif %}">Todos</a>
+        {% for cartao in cartoes %}
+            <a href="?ano={{ ano }}&cartao={{ cartao.pk }}{% if request.GET.mes %}&mes={{ request.GET.mes }}{% endif %}" class="{% if request.GET.cartao == cartao.pk|stringformat:'s' %}ativo{% endif %}">{{ cartao.nome }}</a>
+        {% endfor %}
+        {% for numero, nome in meses_nav %}
+            <a href="?ano={{ ano }}&mes={{ numero }}{% if request.GET.cartao %}&cartao={{ request.GET.cartao }}{% endif %}" class="{% if request.GET.mes == numero|stringformat:'s' %}ativo{% endif %}">{{ nome }}</a>
+        {% endfor %}
+    </div>
+    <div class="acoes">
+        <a class="botao-secundario" href="{% url 'cartoes:cartao_novo' %}">Novo cartão</a>
+        <a class="botao" href="{% url 'cartoes:nova' %}?ano={{ ano }}">Nova fatura</a>
+    </div>
+</div>
+
+<div class="card">
+    <p class="totais">Total {{ total|brl }} · À pagar <span data-a-pagar data-a-pagar-valor="{{ a_pagar }}">{{ a_pagar|brl }}</span></p>
+    <div class="tabela-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Cartão</th>
+                    <th>Mês</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for fatura in faturas %}
+                    <tr>
+                        <td>{{ fatura.cartao.nome }}</td>
+                        <td>{{ fatura.get_mes_display }}</td>
+                        <td>{{ fatura.total|brl }}</td>
+                        <td>
+                            {% url 'cartoes:status' fatura.pk as status_url %}
+                            {% include "includes/seletor_status.html" with objeto=fatura url=status_url permite_cartao=False opcoes=status_pagamento valor=fatura.total %}
+                        </td>
+                        <td class="acoes">
+                            <a class="botao-secundario botao-pequeno" href="{% url 'cartoes:detalhe' fatura.pk %}">Itens</a>
+                            <button type="button" class="botao-secundario botao-pequeno" data-duplicar="{% url 'cartoes:duplicar' fatura.pk %}">Duplicar</button>
+                            <a class="botao-secundario botao-pequeno" href="{% url 'cartoes:editar' fatura.pk %}">Editar</a>
+                            <a class="botao-perigo botao-pequeno" href="{% url 'cartoes:excluir' fatura.pk %}">Excluir</a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="5">Nenhuma fatura cadastrada.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
