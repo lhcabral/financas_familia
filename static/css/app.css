@@ -76,7 +76,29 @@ a { color: inherit; }
     opacity: 0.7;
 }
 
-.conteudo { padding: 32px 40px 56px; }
+.conteudo {
+    padding: 32px 40px 56px;
+    min-width: 0;
+    container-type: inline-size;
+    container-name: pagina;
+}
+.conteudo-corpo {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    align-items: start;
+}
+.conteudo-corpo.com-filtros {
+    grid-template-columns: minmax(0, 1fr) 250px;
+    grid-template-areas: "main filtros";
+}
+.conteudo-principal {
+    min-width: 0;
+    grid-area: main;
+}
+.conteudo-corpo.com-filtros .sidebar-filtros {
+    grid-area: filtros;
+}
 .topo {
     display: flex;
     justify-content: space-between;
@@ -120,6 +142,7 @@ h1 { font-size: 2.1rem; }
 .kpis { grid-template-columns: repeat(4, 1fr); margin-bottom: 24px; }
 .meses { grid-template-columns: repeat(4, 1fr); }
 .grade-2 { grid-template-columns: 1.6fr 1fr; align-items: start; }
+.pilha-lateral { display: grid; gap: 16px; }
 
 .card {
     background: var(--paper);
@@ -215,7 +238,7 @@ h1 { font-size: 2.1rem; }
     gap: 8px;
     align-items: center;
 }
-.acoes-pagina { justify-content: space-between; margin-bottom: 18px; }
+.acoes-pagina { justify-content: flex-end; margin-bottom: 18px; }
 
 .botao, button, .botao-secundario, .botao-perigo {
     display: inline-flex;
@@ -274,16 +297,166 @@ th { font-size: 0.8rem; color: var(--muted); font-weight: 600; }
     padding: 10px 0;
     border-bottom: 1px solid var(--line);
 }
-.totais { display: flex; gap: 18px; color: var(--muted); }
+.totais { display: flex; gap: 18px; color: var(--muted); flex-wrap: wrap; }
 
+.intro-pagina {
+    margin: 8px 0 0;
+    color: var(--muted);
+    max-width: 52ch;
+    line-height: 1.45;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+.sidebar-filtros {
+    position: sticky;
+    top: 20px;
+    display: grid;
+    gap: 16px;
+    padding: 16px;
+}
+.sidebar-filtros h2 { font-size: 1.15rem; }
+.rotulo-filtro {
+    margin: 0 0 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+.grupo-filtro { display: grid; gap: 8px; }
+.busca {
+    display: grid;
+    gap: 8px;
+}
+.busca input[type="search"] { width: 100%; }
+.sidebar-filtros .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.sidebar-filtros .chips a, .sidebar-filtros .chip {
+    padding: 5px 9px;
+    font-size: 0.8rem;
+}
+
+.chip-este-mes { border-color: var(--gold) !important; color: var(--gold); font-weight: 600; }
+.chip-este-mes.ativo { background: var(--gold); color: #163227; border-color: var(--gold) !important; }
+.chip-gerenciar { border-style: dashed !important; }
+
+.kpis-5 { grid-template-columns: repeat(5, 1fr); }
+.grade-graficos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+    align-items: stretch;
+}
+.grade-graficos h2 { font-size: 1.1rem; margin-bottom: 10px; }
+.grafico-card { display: flex; flex-direction: column; min-width: 0; }
+.grafico-wrap { position: relative; width: 100%; }
+.grafico-barras, .grafico-rosca { height: 220px; }
+
+.mes-card.atual { outline: 2px solid var(--gold); }
+.mes-card a.linha {
+    text-decoration: none;
+}
+.mes-card a.linha:hover span:first-child { text-decoration: underline; }
+
+.cabecalho-painel {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+}
+.cabecalho-painel a { color: var(--forest); font-weight: 600; text-decoration: none; }
+.lista-abertos a { text-decoration: none; display: grid; gap: 2px; }
+.lista-abertos a:hover strong { text-decoration: underline; }
+
+.chip-mini {
+    display: inline-flex;
+    margin-left: 6px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: #f6e6cc;
+    color: var(--card);
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+.vinculo-cartao {
+    display: inline-flex;
+    margin-top: 4px;
+    color: var(--card);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+.vinculo-cartao:hover { text-decoration: underline; }
+
+.vencimento { display: inline-flex; flex-direction: column; gap: 2px; font-size: 0.88rem; }
+.vencimento small { font-weight: 700; }
+.vencimento-atrasada { color: var(--terracotta); }
+.vencimento-vence_hoje { color: var(--card); }
+.badge-mini {
+    display: inline-flex;
+    width: fit-content;
+    border-radius: 999px;
+    padding: 1px 7px;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+.badge-mini.atrasada { background: #f8e4db; color: var(--terracotta); }
+.badge-mini.hoje { background: #f6e6cc; color: var(--card); }
+
+.empty-state {
+    text-align: center;
+    padding: 28px 12px;
+    color: var(--muted);
+}
+.empty-state .botao { margin-top: 10px; }
+
+.campo-check {
+    grid-template-columns: auto 1fr;
+    align-items: center;
+}
+.campo-check label { order: 2; }
+.campo-check input { order: 1; width: auto; }
+
+table a { color: var(--forest); font-weight: 600; text-decoration: none; }
+table a:hover { text-decoration: underline; }
+
+@container pagina (max-width: 720px) {
+    .conteudo-corpo.com-filtros {
+        grid-template-columns: 1fr;
+        grid-template-areas: "filtros" "main";
+    }
+    .sidebar-filtros { position: static; }
+}
 @media (max-width: 1100px) {
-    .kpis, .meses { grid-template-columns: repeat(2, 1fr); }
+    .kpis, .meses, .kpis-5 { grid-template-columns: repeat(2, 1fr); }
     .grade-2 { grid-template-columns: 1fr; }
+}
+@media (max-width: 900px) {
+    .grade-graficos { grid-template-columns: 1fr; }
 }
 @media (max-width: 800px) {
     .layout { grid-template-columns: 1fr; }
     .sidebar { flex-direction: row; flex-wrap: wrap; }
     .menu { flex-direction: row; flex-wrap: wrap; }
     .conteudo { padding: 20px; }
-    .kpis, .meses { grid-template-columns: 1fr; }
+    .kpis, .meses, .kpis-5 { grid-template-columns: 1fr; }
+    .conteudo-corpo.com-filtros {
+        grid-template-columns: 1fr;
+        grid-template-areas: "filtros" "main";
+    }
+    .sidebar-filtros { position: static; }
 }

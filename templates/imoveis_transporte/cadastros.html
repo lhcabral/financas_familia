@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Consórcios cadastrados{% endblock %}
+{% block kicker %}Imóveis e transporte{% endblock %}
+{% block heading %}Gerenciar consórcios{% endblock %}
+{% block intro %}
+    <p class="intro-pagina">Edite nome, grupo e total de parcelas. Excluir um consórcio também remove as parcelas.</p>
+{% endblock %}
+
+{% block content %}
+<div class="acoes-pagina">
+    <a class="botao-secundario" href="{{ voltar }}">Voltar às parcelas</a>
+    <a class="botao" href="{% url 'imoveis_transporte:consorcio_novo' %}">Novo consórcio</a>
+</div>
+<div class="card">
+    <div class="tabela-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Grupo</th>
+                    <th>Parcelas</th>
+                    <th>Lançamentos</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for consorcio in consorcios %}
+                    <tr>
+                        <td>{{ consorcio.nome }}</td>
+                        <td>{{ consorcio.grupo|default:'—' }}</td>
+                        <td>{{ consorcio.total_parcelas|default:'—' }}</td>
+                        <td>{{ consorcio.parcelas.count }}</td>
+                        <td class="acoes">
+                            <a class="botao-secundario botao-pequeno" href="{% url 'imoveis_transporte:consorcio_editar' consorcio.pk %}">Editar</a>
+                            <a class="botao-perigo botao-pequeno" href="{% url 'imoveis_transporte:consorcio_excluir' consorcio.pk %}">Excluir</a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="5">Nenhum consórcio cadastrado.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

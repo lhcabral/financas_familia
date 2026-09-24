@@ -23,6 +23,8 @@ def status_classe(status):
         'aberto': 'status-aberto',
         'fechado': 'status-fechado',
         'cartao': 'status-cartao',
+        'previsto': 'status-aberto',
+        'recebido': 'status-fechado',
     }
     return mapa.get(status, '')
 
@@ -38,3 +40,33 @@ def saldo_classe(valor):
     if numero < 0:
         return 'saldo-negativo'
     return 'saldo-zero'
+
+
+@register.filter
+def data_br(value):
+    if not value:
+        return '—'
+    return value.strftime('%d/%m')
+
+
+@register.filter
+def get_item(dicionario, chave):
+    if not dicionario:
+        return ''
+    return dicionario.get(chave, '')
+
+
+@register.simple_tag
+def qs(request, **kwargs):
+    dados = request.GET.copy()
+    for chave, valor in kwargs.items():
+        if valor in (None, ''):
+            dados.pop(chave, None)
+        else:
+            dados[chave] = valor
+    return dados.urlencode()
+
+
+@register.simple_tag
+def qs_set(request, chave, valor=''):
+    return qs(request, **{chave: valor})

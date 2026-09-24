@@ -17,6 +17,6 @@ class ConsorcioAdmin(admin.ModelAdmin):
 
 @admin.register(ParcelaConsorcio)
 class ParcelaConsorcioAdmin(admin.ModelAdmin):
-    list_display = ('consorcio', 'mes', 'ano', 'rotulo_parcela', 'valor', 'status')
-    list_filter = ('ano', 'mes', 'consorcio', 'status')
+    list_display = ('consorcio', 'mes', 'ano', 'rotulo_parcela', 'valor', 'status', 'recorrente')
+    list_filter = ('ano', 'mes', 'consorcio', 'status', 'recorrente')
     list_editable = ('status',)

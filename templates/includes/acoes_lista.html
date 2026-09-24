@@ -1,0 +1,18 @@
+<div class="acoes-pagina">
+    <div class="acoes">
+        {% if gerar_url and request.GET.mes and request.GET.mes != 'todos' %}
+            <form method="post" action="{{ gerar_url }}?{{ request.GET.urlencode }}">
+                {% csrf_token %}
+                <input type="hidden" name="ano" value="{{ ano }}">
+                <input type="hidden" name="mes" value="{{ request.GET.mes }}">
+                <button class="botao-secundario" type="submit">Gerar recorrentes do próximo mês</button>
+            </form>
+        {% endif %}
+        {% if nova_secundaria_url %}
+            <a class="botao-secundario" href="{{ nova_secundaria_url }}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}">{{ nova_secundaria_label }}</a>
+        {% endif %}
+        {% if nova_url %}
+            <a class="botao" href="{{ nova_url }}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}">{{ nova_label }}</a>
+        {% endif %}
+    </div>
+</div>

@@ -7,10 +7,13 @@
 {% block content %}
 <section class="card">
     <p>Tem certeza que deseja excluir <strong>{{ objeto }}</strong>?</p>
+    {% if aviso %}
+        <p class="alerta alerta-error">{{ aviso }}</p>
+    {% endif %}
     <form method="post" class="acoes">
         {% csrf_token %}
         <button class="botao-perigo" type="submit">Excluir</button>
-        <a class="botao-secundario" href="javascript:history.back()">Cancelar</a>
+        <a class="botao-secundario" href="{{ voltar|default:'javascript:history.back()' }}">Cancelar</a>
     </form>
 </section>
 {% endblock %}

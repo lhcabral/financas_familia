@@ -1,6 +1,7 @@
 from django.db import models
 
 from inicio.constants import ANO_PADRAO, MESES, STATUS_ABERTO, STATUS_CHOICES
+from inicio.vencimento import data_do_dia, situacao_vencimento
 
 
 class Filho(models.Model):
@@ -26,6 +27,17 @@ class DespesaFilho(models.Model):
         choices=STATUS_CHOICES,
         default=STATUS_ABERTO,
     )
+    dia_vencimento = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        verbose_name='Dia de vencimento',
+        help_text='Dia do mês em que vence (1 a 31).',
+    )
+    recorrente = models.BooleanField(
+        default=False,
+        verbose_name='Lançamento recorrente',
+        help_text='Permite gerar automaticamente no mês seguinte.',
+    )
     item_fatura = models.ForeignKey(
         'cartoes.ItemFatura',
         null=True,
@@ -45,3 +57,11 @@ class DespesaFilho(models.Model):
     @property
     def esta_aberto(self):
         return self.status == STATUS_ABERTO
+
+    @property
+    def data_vencimento(self):
+        return data_do_dia(self.ano, self.mes, self.dia_vencimento)
+
+    @property
+    def situacao_vencimento(self):
+        return situacao_vencimento(self.data_vencimento, self.esta_aberto)

@@ -4,14 +4,20 @@
 {% block title %}{{ fatura }}{% endblock %}
 {% block kicker %}Cartões{% endblock %}
 {% block heading %}{{ fatura.cartao.nome }} · {{ fatura.get_mes_display }}/{{ fatura.ano }}{% endblock %}
+{% block intro %}
+    <p class="intro-pagina">Itens desta fatura. Compras parceladas geram automaticamente os lançamentos nas faturas seguintes.</p>
+{% endblock %}
 
 {% block content %}
 <div class="acoes-pagina">
     <p class="totais">
         Total {{ total|brl }} ·
         <span class="{{ fatura.status|status_classe }}">{{ fatura.get_status_display }}</span>
+        {% if fatura.data_vencimento %}
+            · Vence {{ fatura.data_vencimento|data_br }}
+        {% endif %}
     </p>
-    <a class="botao-secundario" href="{% url 'cartoes:lista' %}">Voltar</a>
+    <a class="botao-secundario" href="{{ voltar|default:'/cartoes/' }}">Voltar</a>
 </div>
 
 <div class="grade-2">
@@ -21,6 +27,7 @@
                 <thead>
                     <tr>
                         <th>Descrição</th>
+                        <th>Parcela</th>
                         <th>Valor</th>
                         <th></th>
                     </tr>
@@ -29,35 +36,54 @@
                     {% for item in fatura.itens.all %}
                         <tr>
                             <td>{{ item.descricao }}</td>
+                            <td>{{ item.rotulo_parcela|default:'—' }}</td>
                             <td>{{ item.valor|brl }}</td>
-                        <td class="acoes">
-                            <button type="button" class="botao-secundario botao-pequeno" data-duplicar="{% url 'cartoes:item_duplicar' item.pk %}">Duplicar</button>
-                            <form method="post" action="{% url 'cartoes:item_excluir' item.pk %}">
-                                {% csrf_token %}
-                                <button class="botao-perigo botao-pequeno" type="submit">Excluir</button>
-                            </form>
-                        </td>
+                            <td class="acoes">
+                                <button type="button" class="botao-secundario botao-pequeno" data-duplicar="{% url 'cartoes:item_duplicar' item.pk %}">Duplicar</button>
+                                <a class="botao-perigo botao-pequeno" href="{% url 'cartoes:item_excluir' item.pk %}">Excluir</a>
+                            </td>
                         </tr>
                     {% empty %}
-                        <tr><td colspan="3">Nenhum item nesta fatura.</td></tr>
+                        <tr><td colspan="4">Nenhum item nesta fatura.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </section>
 
-    <section class="card formulario">
-        <h2>Adicionar item</h2>
-        <form method="post" action="{% url 'cartoes:item_novo' fatura.pk %}">
-            {% csrf_token %}
-            {% for campo in form_item %}
+    <div class="pilha-lateral">
+        <section class="card formulario">
+            <h2>Adicionar item</h2>
+            <form method="post" action="{% url 'cartoes:item_novo' fatura.pk %}">
+                {% csrf_token %}
+                {% for campo in form_item %}
+                    <div class="campo">
+                        <label for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+                        {{ campo }}
+                        {% if campo.help_text %}<p class="ajuda">{{ campo.help_text }}</p>{% endif %}
+                    </div>
+                {% endfor %}
+                <button class="botao" type="submit">Incluir</button>
+            </form>
+        </section>
+
+        <section class="card formulario">
+            <h2>Importar fatura</h2>
+            <p class="ajuda">
+                Aceita <strong>Nubank</strong> (CSV), <strong>Bradesco</strong> (CSV),
+                <strong>Porto Seguro</strong> (XLSX) ou CSV simples
+                (<code>descricao,valor,parcelas,parcela_atual</code>).
+                Parcelas como <code>1/3</code> ou <code>Parcela 4/4</code> são lançadas nos meses seguintes.
+            </p>
+            <form method="post" action="{% url 'cartoes:item_importar' fatura.pk %}" enctype="multipart/form-data">
+                {% csrf_token %}
                 <div class="campo">
-                    <label for="{{ campo.id_for_label }}">{{ campo.label }}</label>
-                    {{ campo }}
+                    <label for="{{ form_importar.arquivo.id_for_label }}">{{ form_importar.arquivo.label }}</label>
+                    {{ form_importar.arquivo }}
                 </div>
-            {% endfor %}
-            <button class="botao" type="submit">Incluir</button>
-        </form>
-    </section>
+                <button class="botao-secundario" type="submit">Importar itens</button>
+            </form>
+        </section>
+    </div>
 </div>
 {% endblock %}

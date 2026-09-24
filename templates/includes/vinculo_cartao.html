@@ -1,0 +1,7 @@
+{% if objeto.status == 'cartao' and objeto.item_fatura %}
+    <a class="vinculo-cartao" href="{% url 'cartoes:detalhe' objeto.item_fatura.fatura_id %}" data-vinculo-cartao>
+        {{ objeto.item_fatura.fatura.cartao.nome }}
+    </a>
+{% else %}
+    <span data-vinculo-cartao></span>
+{% endif %}

@@ -2,28 +2,25 @@
 {% load financeiro %}
 
 {% block title %}Imóveis e transporte{% endblock %}
-{% block kicker %}Planilha{% endblock %}
+{% block kicker %}Patrimônio{% endblock %}
 {% block heading %}Imóveis e transporte{% endblock %}
+{% block intro %}
+    <p class="intro-pagina">Acompanhe as parcelas dos consórcios. Dá para lançar mais de uma no mesmo mês (antecipação ou quitação). O rótulo (27/200) avança ao gerar o próximo mês.</p>
+{% endblock %}
+
+{% block classe_corpo %}com-filtros{% endblock %}
+{% block filtros %}
+{% url 'imoveis_transporte:cadastros' as gerenciar_url %}
+{% include "includes/barra_filtros.html" with busca_placeholder="Buscar consórcio ou parcela" status_opcoes=status_choices entidades=consorcios entidade_param="consorcio" entidade_todas="Consórcio" gerenciar_url=gerenciar_url gerenciar_label="Gerenciar consórcios" %}
+{% endblock %}
 
 {% block content %}
-<div class="acoes-pagina">
-    <div class="chips">
-        <a href="?ano={{ ano }}" class="{% if not request.GET.mes and not request.GET.consorcio %}ativo{% endif %}">Todos</a>
-        {% for consorcio in consorcios %}
-            <a href="?ano={{ ano }}&consorcio={{ consorcio.pk }}{% if request.GET.mes %}&mes={{ request.GET.mes }}{% endif %}" class="{% if request.GET.consorcio == consorcio.pk|stringformat:'s' %}ativo{% endif %}">{{ consorcio.nome }}</a>
-        {% endfor %}
-        {% for numero, nome in meses_nav %}
-            <a href="?ano={{ ano }}&mes={{ numero }}{% if request.GET.consorcio %}&consorcio={{ request.GET.consorcio }}{% endif %}" class="{% if request.GET.mes == numero|stringformat:'s' %}ativo{% endif %}">{{ nome }}</a>
-        {% endfor %}
-    </div>
-    <div class="acoes">
-        <a class="botao-secundario" href="{% url 'imoveis_transporte:consorcio_novo' %}">Novo consórcio</a>
-        <a class="botao" href="{% url 'imoveis_transporte:nova' %}?ano={{ ano }}">Nova parcela</a>
-    </div>
-</div>
+{% url 'imoveis_transporte:nova' as nova_url %}
+{% url 'imoveis_transporte:gerar' as gerar_url %}
+{% include "includes/acoes_lista.html" with nova_url=nova_url nova_label="Nova parcela" gerar_url=gerar_url %}
 
 <div class="card">
-    <p class="totais">Total {{ total|brl }} · À pagar <span data-a-pagar data-a-pagar-valor="{{ a_pagar }}">{{ a_pagar|brl }}</span></p>
+    <p class="totais">Total {{ total|brl }} · A pagar <span data-a-pagar data-a-pagar-valor="{{ a_pagar }}">{{ a_pagar|brl }}</span></p>
     <div class="tabela-wrap">
         <table>
             <thead>
@@ -31,6 +28,7 @@
                     <th>Consórcio</th>
                     <th>Mês</th>
                     <th>Parcela</th>
+                    <th>Vencimento</th>
                     <th>Valor</th>
                     <th>Status</th>
                     <th></th>
@@ -41,7 +39,12 @@
                     <tr>
                         <td>{{ parcela.consorcio.nome }}</td>
                         <td>{{ parcela.get_mes_display }}</td>
-                        <td>{{ parcela.rotulo_parcela }}</td>
+                        <td>
+                            {{ parcela.rotulo_parcela|default:'—' }}
+                            {% if parcela.recorrente %}<span class="chip-mini">Recorrente</span>{% endif %}
+                            {% include "includes/vinculo_cartao.html" with objeto=parcela %}
+                        </td>
+                        <td>{% include "includes/badge_vencimento.html" with objeto=parcela %}</td>
                         <td>{{ parcela.valor|brl }}</td>
                         <td>
                             {% url 'imoveis_transporte:status' parcela.pk as status_url %}
@@ -49,12 +52,16 @@
                         </td>
                         <td class="acoes">
                             <button type="button" class="botao-secundario botao-pequeno" data-duplicar="{% url 'imoveis_transporte:duplicar' parcela.pk %}">Duplicar</button>
-                            <a class="botao-secundario botao-pequeno" href="{% url 'imoveis_transporte:editar' parcela.pk %}">Editar</a>
-                            <a class="botao-perigo botao-pequeno" href="{% url 'imoveis_transporte:excluir' parcela.pk %}">Excluir</a>
+                            <a class="botao-secundario botao-pequeno" href="{% url 'imoveis_transporte:editar' parcela.pk %}?{{ request.GET.urlencode }}">Editar</a>
+                            <a class="botao-perigo botao-pequeno" href="{% url 'imoveis_transporte:excluir' parcela.pk %}?{{ request.GET.urlencode }}">Excluir</a>
                         </td>
                     </tr>
                 {% empty %}
-                    <tr><td colspan="6">Nenhuma parcela cadastrada.</td></tr>
+                    <tr>
+                        <td colspan="7">
+                            {% include "includes/empty_state.html" with mensagem="Nenhuma parcela neste recorte." url=nova_url rotulo="Cadastrar parcela" %}
+                        </td>
+                    </tr>
                 {% endfor %}
             </tbody>
         </table>

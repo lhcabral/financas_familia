@@ -5,7 +5,7 @@
     data-status-atual="{{ objeto.status }}"
     data-permite-cartao="{% if permite_cartao %}1{% else %}0{% endif %}"
     data-valor="{{ valor }}"
-    data-aberto="{% if objeto.status == 'aberto' %}1{% else %}0{% endif %}"
+    data-aberto="{% if objeto.status == 'aberto' or objeto.status == 'previsto' %}1{% else %}0{% endif %}"
     aria-label="Status"
 >
     {% for codigo, rotulo in opcoes %}

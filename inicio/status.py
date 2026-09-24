@@ -1,15 +1,17 @@
 from django.core.exceptions import ValidationError
 from django.http import JsonResponse
+from django.urls import reverse
 
 from cartoes.models import Cartao, Fatura, ItemFatura
 from inicio.constants import STATUS_ABERTO, STATUS_CARTAO, STATUS_CHOICES, STATUS_PAGAMENTO
 
 STATUS_VALIDOS = {codigo for codigo, _ in STATUS_CHOICES}
 STATUS_FATURA = {codigo for codigo, _ in STATUS_PAGAMENTO}
+STATUS_RECEITA_VALIDOS = {'previsto', 'recebido'}
 
 
 def aplicar_status(obj, status, cartao_id=None, descricao_item='', valor=None, ano=None, mes=None):
-    """Atualiza o status. Cartão fecha a conta e lança o valor na fatura do mês."""
+    """Atualiza o status. No cartão, a conta sai de a pagar e entra na fatura do mês."""
     if status not in STATUS_VALIDOS:
         raise ValidationError('Status inválido.')
 
@@ -26,12 +28,30 @@ def aplicar_status(obj, status, cartao_id=None, descricao_item='', valor=None, a
     return obj
 
 
+def aplicar_status_receita(receita, status):
+    if status not in STATUS_RECEITA_VALIDOS:
+        raise ValidationError('A receita só pode ficar Prevista ou Recebida.')
+    receita.status = status
+    receita.save(update_fields=['status'])
+    return receita
+
+
+def extra_status(obj):
+    extra = {}
+    item = getattr(obj, 'item_fatura', None)
+    if item and item.fatura_id:
+        extra['cartao_nome'] = item.fatura.cartao.nome
+        extra['fatura_url'] = reverse('cartoes:detalhe', args=[item.fatura_id])
+    return extra
+
+
 def json_status(obj, extra=None):
     dados = {
         'ok': True,
         'status': obj.status,
         'status_display': obj.get_status_display(),
     }
+    dados.update(extra_status(obj))
     if extra:
         dados.update(extra)
     return JsonResponse(dados)
@@ -47,7 +67,7 @@ def json_erro(erro, status_http=400):
 
 def aplicar_status_fatura(fatura, status):
     if status not in STATUS_FATURA:
-        raise ValidationError('A fatura só pode ficar Aberta ou Fechada.')
+        raise ValidationError('A fatura só pode ficar A pagar ou Paga.')
     fatura.status = status
     fatura.save(update_fields=['status'])
     return fatura
@@ -55,7 +75,7 @@ def aplicar_status_fatura(fatura, status):
 
 def _lancar_no_cartao(obj, cartao_id, descricao_item, valor, ano, mes):
     if not cartao_id:
-        raise ValidationError('Selecione um cartão para fechar esta conta.')
+        raise ValidationError('Selecione um cartão para lançar esta conta na fatura.')
     try:
         cartao = Cartao.objects.get(pk=cartao_id)
     except (Cartao.DoesNotExist, ValueError, TypeError) as exc:

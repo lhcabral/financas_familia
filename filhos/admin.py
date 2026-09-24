@@ -11,7 +11,7 @@ class FilhoAdmin(admin.ModelAdmin):
 
 @admin.register(DespesaFilho)
 class DespesaFilhoAdmin(admin.ModelAdmin):
-    list_display = ('filho', 'descricao', 'mes', 'ano', 'valor', 'status')
-    list_filter = ('ano', 'mes', 'filho', 'status')
+    list_display = ('filho', 'descricao', 'mes', 'ano', 'valor', 'status', 'recorrente')
+    list_filter = ('ano', 'mes', 'filho', 'status', 'recorrente')
     search_fields = ('descricao',)
     list_editable = ('status',)

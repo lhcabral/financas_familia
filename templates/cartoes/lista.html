@@ -2,34 +2,32 @@
 {% load financeiro %}
 
 {% block title %}Cartões{% endblock %}
-{% block kicker %}Planilha{% endblock %}
+{% block kicker %}Faturas{% endblock %}
 {% block heading %}Cartões e faturas{% endblock %}
+{% block intro %}
+    <p class="intro-pagina">Cada fatura reúne os itens do mês. Contas lançadas como "No cartão" aparecem automaticamente aqui.</p>
+{% endblock %}
+
+{% block classe_corpo %}com-filtros{% endblock %}
+{% block filtros %}
+{% url 'cartoes:cadastros' as gerenciar_url %}
+{% include "includes/barra_filtros.html" with busca_placeholder="Buscar cartão" status_opcoes=status_pagamento entidades=cartoes entidade_param="cartao" entidade_todas="Cartão" gerenciar_url=gerenciar_url gerenciar_label="Gerenciar cartões" %}
+{% endblock %}
 
 {% block content %}
-<div class="acoes-pagina">
-    <div class="chips">
-        <a href="?ano={{ ano }}" class="{% if not request.GET.mes and not request.GET.cartao %}ativo{% endif %}">Todos</a>
-        {% for cartao in cartoes %}
-            <a href="?ano={{ ano }}&cartao={{ cartao.pk }}{% if request.GET.mes %}&mes={{ request.GET.mes }}{% endif %}" class="{% if request.GET.cartao == cartao.pk|stringformat:'s' %}ativo{% endif %}">{{ cartao.nome }}</a>
-        {% endfor %}
-        {% for numero, nome in meses_nav %}
-            <a href="?ano={{ ano }}&mes={{ numero }}{% if request.GET.cartao %}&cartao={{ request.GET.cartao }}{% endif %}" class="{% if request.GET.mes == numero|stringformat:'s' %}ativo{% endif %}">{{ nome }}</a>
-        {% endfor %}
-    </div>
-    <div class="acoes">
-        <a class="botao-secundario" href="{% url 'cartoes:cartao_novo' %}">Novo cartão</a>
-        <a class="botao" href="{% url 'cartoes:nova' %}?ano={{ ano }}">Nova fatura</a>
-    </div>
-</div>
+{% url 'cartoes:nova' as nova_url %}
+{% include "includes/acoes_lista.html" with nova_url=nova_url nova_label="Nova fatura" %}
 
 <div class="card">
-    <p class="totais">Total {{ total|brl }} · À pagar <span data-a-pagar data-a-pagar-valor="{{ a_pagar }}">{{ a_pagar|brl }}</span></p>
+    <p class="totais">Total {{ total|brl }} · A pagar <span data-a-pagar data-a-pagar-valor="{{ a_pagar }}">{{ a_pagar|brl }}</span></p>
     <div class="tabela-wrap">
         <table>
             <thead>
                 <tr>
                     <th>Cartão</th>
                     <th>Mês</th>
+                    <th>Vencimento</th>
+                    <th>Itens</th>
                     <th>Total</th>
                     <th>Status</th>
                     <th></th>
@@ -40,6 +38,8 @@
                     <tr>
                         <td>{{ fatura.cartao.nome }}</td>
                         <td>{{ fatura.get_mes_display }}</td>
+                        <td>{% include "includes/badge_vencimento.html" with objeto=fatura %}</td>
+                        <td>{{ fatura.itens.all|length }}</td>
                         <td>{{ fatura.total|brl }}</td>
                         <td>
                             {% url 'cartoes:status' fatura.pk as status_url %}
@@ -48,12 +48,16 @@
                         <td class="acoes">
                             <a class="botao-secundario botao-pequeno" href="{% url 'cartoes:detalhe' fatura.pk %}">Itens</a>
                             <button type="button" class="botao-secundario botao-pequeno" data-duplicar="{% url 'cartoes:duplicar' fatura.pk %}">Duplicar</button>
-                            <a class="botao-secundario botao-pequeno" href="{% url 'cartoes:editar' fatura.pk %}">Editar</a>
-                            <a class="botao-perigo botao-pequeno" href="{% url 'cartoes:excluir' fatura.pk %}">Excluir</a>
+                            <a class="botao-secundario botao-pequeno" href="{% url 'cartoes:editar' fatura.pk %}?{{ request.GET.urlencode }}">Editar</a>
+                            <a class="botao-perigo botao-pequeno" href="{% url 'cartoes:excluir' fatura.pk %}?{{ request.GET.urlencode }}">Excluir</a>
                         </td>
                     </tr>
                 {% empty %}
-                    <tr><td colspan="5">Nenhuma fatura cadastrada.</td></tr>
+                    <tr>
+                        <td colspan="7">
+                            {% include "includes/empty_state.html" with mensagem="Nenhuma fatura neste recorte." url=nova_url rotulo="Cadastrar fatura" %}
+                        </td>
+                    </tr>
                 {% endfor %}
             </tbody>
         </table>

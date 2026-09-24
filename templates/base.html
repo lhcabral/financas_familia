@@ -22,14 +22,14 @@
                 </div>
             </div>
             <nav class="menu">
-                <a href="{% url 'inicio:dashboard' %}?ano={{ ano_selecionado }}" class="{% if request.resolver_match.url_name == 'dashboard' %}ativo{% endif %}">Início</a>
+                <a href="{% url 'inicio:dashboard' %}?ano={{ ano_selecionado }}" class="{% if request.resolver_match.url_name == 'dashboard' or request.resolver_match.url_name == 'contas_a_pagar' %}ativo{% endif %}">Início</a>
                 <a href="{% url 'inicio:receitas' %}?ano={{ ano_selecionado }}" class="{% if 'receita' in request.resolver_match.url_name %}ativo{% endif %}">Receitas</a>
-                <a href="{% url 'despesas_basicas:lista' %}?ano={{ ano_selecionado }}" class="{% if request.resolver_match.app_name == 'despesas_basicas' %}ativo{% endif %}">Despesas básicas</a>
+                <a href="{% url 'despesas_basicas:lista' %}?ano={{ ano_selecionado }}" class="{% if request.resolver_match.app_name == 'despesas_basicas' %}ativo{% endif %}">Despesas da casa</a>
                 <a href="{% url 'filhos:lista' %}?ano={{ ano_selecionado }}" class="{% if request.resolver_match.app_name == 'filhos' %}ativo{% endif %}">Filhos</a>
                 <a href="{% url 'cartoes:lista' %}?ano={{ ano_selecionado }}" class="{% if request.resolver_match.app_name == 'cartoes' %}ativo{% endif %}">Cartões</a>
-                <a href="{% url 'imoveis_transporte:lista' %}?ano={{ ano_selecionado }}" class="{% if request.resolver_match.app_name == 'imoveis_transporte' %}ativo{% endif %}">Imóveis e transporte</a>
+                <a href="{% url 'imoveis_transporte:lista' %}?ano={{ ano_selecionado }}" class="{% if request.resolver_match.app_name == 'imoveis_transporte' %}ativo{% endif %}">Imóveis e carro</a>
             </nav>
-            <p class="sidebar-nota">Controle mensal com base na planilha de 2026.</p>
+            <p class="sidebar-nota">Controle mensal de {{ ano_selecionado }}.</p>
         </aside>
 
         <main class="conteudo">
@@ -37,6 +37,7 @@
                 <div>
                     <p class="kicker">{% block kicker %}Família{% endblock %}</p>
                     <h1>{% block heading %}{% endblock %}</h1>
+                    {% block intro %}{% endblock %}
                 </div>
                 <form class="filtro-ano" method="get">
                     <label for="ano">Ano</label>
@@ -49,6 +50,8 @@
                     {% if request.GET.filho %}<input type="hidden" name="filho" value="{{ request.GET.filho }}">{% endif %}
                     {% if request.GET.cartao %}<input type="hidden" name="cartao" value="{{ request.GET.cartao }}">{% endif %}
                     {% if request.GET.consorcio %}<input type="hidden" name="consorcio" value="{{ request.GET.consorcio }}">{% endif %}
+                    {% if request.GET.q %}<input type="hidden" name="q" value="{{ request.GET.q }}">{% endif %}
+                    {% if request.GET.status %}<input type="hidden" name="status" value="{{ request.GET.status }}">{% endif %}
                 </form>
             </header>
 
@@ -60,14 +63,19 @@
                 </div>
             {% endif %}
 
-            {% block content %}{% endblock %}
+            <div class="conteudo-corpo {% block classe_corpo %}{% endblock %}">
+                {% block filtros %}{% endblock %}
+                <div class="conteudo-principal">
+                    {% block content %}{% endblock %}
+                </div>
+            </div>
         </main>
     </div>
 
     <dialog id="modal-cartao" class="modal-cartao">
         <form method="dialog">
             <h3>Lançar no cartão</h3>
-            <p class="ajuda">A conta fica fechada e o valor entra na fatura do mesmo mês.</p>
+            <p class="ajuda">A conta sai de <strong>A pagar</strong> e o valor entra na fatura do mesmo mês.</p>
             <div id="lista-cartoes" class="lista-cartoes"></div>
             <div class="acoes">
                 <button class="botao-secundario" value="cancel">Cancelar</button>
@@ -78,7 +86,7 @@
     <dialog id="modal-duplicar" class="modal-cartao modal-form">
         <form id="form-duplicar" method="post">
             <h3 id="titulo-duplicar">Duplicar</h3>
-            <p class="ajuda">Ajuste o que quiser antes de criar a cópia.</p>
+            <p class="ajuda">Ajuste o que quiser antes de criar a cópia. Dá para repetir nos meses seguintes.</p>
             <div id="campos-duplicar" class="formulario"></div>
             <p class="alerta alerta-error" id="erro-duplicar" hidden></p>
             <div class="acoes">
@@ -90,5 +98,6 @@
     {{ cartoes_json|json_script:"cartoes-data" }}
     <script src="{% static 'js/status.js' %}"></script>
     <script src="{% static 'js/duplicar.js' %}"></script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

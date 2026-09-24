@@ -2,28 +2,25 @@
 {% load financeiro %}
 
 {% block title %}Filhos{% endblock %}
-{% block kicker %}Planilha{% endblock %}
+{% block kicker %}Família{% endblock %}
 {% block heading %}Despesas dos filhos{% endblock %}
+{% block intro %}
+    <p class="intro-pagina">Escola, atividades e o que for de cada filho. Filtre por nome e lance no cartão se a conta for na fatura.</p>
+{% endblock %}
+
+{% block classe_corpo %}com-filtros{% endblock %}
+{% block filtros %}
+{% url 'filhos:cadastros' as gerenciar_url %}
+{% include "includes/barra_filtros.html" with busca_placeholder="Buscar despesa ou filho" status_opcoes=status_choices entidades=filhos entidade_param="filho" entidade_todas="Filho" gerenciar_url=gerenciar_url gerenciar_label="Gerenciar filhos" %}
+{% endblock %}
 
 {% block content %}
-<div class="acoes-pagina">
-    <div class="chips">
-        <a href="?ano={{ ano }}" class="{% if not request.GET.mes and not request.GET.filho %}ativo{% endif %}">Todos</a>
-        {% for filho in filhos %}
-            <a href="?ano={{ ano }}&filho={{ filho.pk }}{% if request.GET.mes %}&mes={{ request.GET.mes }}{% endif %}" class="{% if request.GET.filho == filho.pk|stringformat:'s' %}ativo{% endif %}">{{ filho.nome }}</a>
-        {% endfor %}
-        {% for numero, nome in meses_nav %}
-            <a href="?ano={{ ano }}&mes={{ numero }}{% if request.GET.filho %}&filho={{ request.GET.filho }}{% endif %}" class="{% if request.GET.mes == numero|stringformat:'s' %}ativo{% endif %}">{{ nome }}</a>
-        {% endfor %}
-    </div>
-    <div class="acoes">
-        <a class="botao-secundario" href="{% url 'filhos:filho_novo' %}">Novo filho</a>
-        <a class="botao" href="{% url 'filhos:nova' %}?ano={{ ano }}{% if request.GET.mes %}&mes={{ request.GET.mes }}{% endif %}{% if request.GET.filho %}&filho={{ request.GET.filho }}{% endif %}">Nova despesa</a>
-    </div>
-</div>
+{% url 'filhos:nova' as nova_url %}
+{% url 'filhos:gerar' as gerar_url %}
+{% include "includes/acoes_lista.html" with nova_url=nova_url nova_label="Nova despesa" gerar_url=gerar_url %}
 
 <div class="card">
-    <p class="totais">Total {{ total|brl }} · À pagar <span data-a-pagar data-a-pagar-valor="{{ a_pagar }}">{{ a_pagar|brl }}</span></p>
+    <p class="totais">Total {{ total|brl }} · A pagar <span data-a-pagar data-a-pagar-valor="{{ a_pagar }}">{{ a_pagar|brl }}</span></p>
     <div class="tabela-wrap">
         <table>
             <thead>
@@ -31,6 +28,7 @@
                     <th>Filho</th>
                     <th>Mês</th>
                     <th>Descrição</th>
+                    <th>Vencimento</th>
                     <th>Valor</th>
                     <th>Status</th>
                     <th></th>
@@ -41,7 +39,12 @@
                     <tr>
                         <td>{{ despesa.filho.nome }}</td>
                         <td>{{ despesa.get_mes_display }}</td>
-                        <td>{{ despesa.descricao }}</td>
+                        <td>
+                            {{ despesa.descricao }}
+                            {% if despesa.recorrente %}<span class="chip-mini">Recorrente</span>{% endif %}
+                            {% include "includes/vinculo_cartao.html" with objeto=despesa %}
+                        </td>
+                        <td>{% include "includes/badge_vencimento.html" with objeto=despesa %}</td>
                         <td>{{ despesa.valor|brl }}</td>
                         <td>
                             {% url 'filhos:status' despesa.pk as status_url %}
@@ -49,12 +52,16 @@
                         </td>
                         <td class="acoes">
                             <button type="button" class="botao-secundario botao-pequeno" data-duplicar="{% url 'filhos:duplicar' despesa.pk %}">Duplicar</button>
-                            <a class="botao-secundario botao-pequeno" href="{% url 'filhos:editar' despesa.pk %}">Editar</a>
-                            <a class="botao-perigo botao-pequeno" href="{% url 'filhos:excluir' despesa.pk %}">Excluir</a>
+                            <a class="botao-secundario botao-pequeno" href="{% url 'filhos:editar' despesa.pk %}?{{ request.GET.urlencode }}">Editar</a>
+                            <a class="botao-perigo botao-pequeno" href="{% url 'filhos:excluir' despesa.pk %}?{{ request.GET.urlencode }}">Excluir</a>
                         </td>
                     </tr>
                 {% empty %}
-                    <tr><td colspan="6">Nenhuma despesa cadastrada.</td></tr>
+                    <tr>
+                        <td colspan="7">
+                            {% include "includes/empty_state.html" with mensagem="Nenhuma despesa dos filhos neste recorte." url=nova_url rotulo="Cadastrar despesa" %}
+                        </td>
+                    </tr>
                 {% endfor %}
             </tbody>
         </table>

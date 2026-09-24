@@ -1,0 +1,56 @@
+{% load financeiro %}
+<aside class="sidebar-filtros card">
+    <h2>Filtros</h2>
+
+    {% if not esconder_busca %}
+        <form class="busca" method="get">
+            <input type="hidden" name="ano" value="{{ ano|default:ano_selecionado }}">
+            {% if request.GET.mes %}<input type="hidden" name="mes" value="{{ request.GET.mes }}">{% endif %}
+            {% if request.GET.filho %}<input type="hidden" name="filho" value="{{ request.GET.filho }}">{% endif %}
+            {% if request.GET.cartao %}<input type="hidden" name="cartao" value="{{ request.GET.cartao }}">{% endif %}
+            {% if request.GET.consorcio %}<input type="hidden" name="consorcio" value="{{ request.GET.consorcio }}">{% endif %}
+            {% if request.GET.status %}<input type="hidden" name="status" value="{{ request.GET.status }}">{% endif %}
+            <label class="rotulo-filtro" for="busca-q">Buscar</label>
+            <input id="busca-q" type="search" name="q" value="{{ request.GET.q }}" placeholder="{{ busca_placeholder|default:'Buscar' }}">
+            <button class="botao-secundario" type="submit">Buscar</button>
+        </form>
+    {% endif %}
+
+    <div class="grupo-filtro">
+        <p class="rotulo-filtro">Mês</p>
+        <div class="chips chips-mes">
+            <a href="?{% qs request mes='todos' %}" class="{% if request.GET.mes == 'todos' %}ativo{% endif %}">Ano inteiro</a>
+            <a href="?{% qs request mes=mes_atual %}" class="chip-este-mes {% if request.GET.mes == mes_atual|stringformat:'s' %}ativo{% endif %}">Este mês</a>
+            {% for numero, nome in meses_nav %}
+                <a href="?{% qs request mes=numero %}" class="{% if request.GET.mes == numero|stringformat:'s' %}ativo{% endif %}">{{ nome|slice:':3' }}</a>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if status_opcoes %}
+        <div class="grupo-filtro">
+            <p class="rotulo-filtro">Status</p>
+            <div class="chips chips-status">
+                <a href="?{% qs request status='' %}" class="{% if not request.GET.status %}ativo{% endif %}">Todos</a>
+                {% for codigo, rotulo in status_opcoes %}
+                    <a href="?{% qs request status=codigo %}" class="{% if request.GET.status == codigo %}ativo{% endif %}">{{ rotulo }}</a>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    {% if entidades %}
+        <div class="grupo-filtro">
+            <p class="rotulo-filtro">{{ entidade_todas|default:'Cadastro' }}</p>
+            <div class="chips chips-entidade">
+                <a href="?{% qs_set request entidade_param '' %}" class="{% if not request.GET|get_item:entidade_param %}ativo{% endif %}">Todos</a>
+                {% for item in entidades %}
+                    <a href="?{% qs_set request entidade_param item.pk %}" class="{% if request.GET|get_item:entidade_param == item.pk|stringformat:'s' %}ativo{% endif %}">{{ item }}</a>
+                {% endfor %}
+                {% if gerenciar_url %}
+                    <a class="chip-gerenciar" href="{{ gerenciar_url }}">{{ gerenciar_label|default:'Gerenciar' }}</a>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+</aside>

@@ -1,0 +1,6 @@
+<div class="empty-state">
+    <p>{{ mensagem }}</p>
+    {% if url %}
+        <a class="botao" href="{{ url }}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}">{{ rotulo|default:'Cadastrar' }}</a>
+    {% endif %}
+</div>

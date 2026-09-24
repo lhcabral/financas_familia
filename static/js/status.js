@@ -13,15 +13,19 @@
         select.classList.remove('status-aberto', 'status-fechado', 'status-cartao');
         select.classList.add(`status-${status}`);
         select.dataset.statusAtual = status;
-        select.dataset.aberto = status === 'aberto' ? '1' : '0';
+        select.dataset.aberto = (status === 'aberto' || status === 'previsto') ? '1' : '0';
+    }
+
+    function ehPendente(status) {
+        return status === 'aberto' || status === 'previsto';
     }
 
     function ajustarAPagar(select, statusNovo) {
-        const alvo = document.querySelector('[data-a-pagar]');
+        const alvo = document.querySelector('[data-a-pagar], [data-a-receber]');
         if (!alvo) return;
         const valor = Number(String(select.dataset.valor || '0').replace(',', '.'));
-        const eraAberto = select.dataset.aberto === '1';
-        const seraAberto = statusNovo === 'aberto';
+        const eraAberto = ehPendente(select.dataset.statusAtual);
+        const seraAberto = ehPendente(statusNovo);
         let atual = Number(alvo.dataset.aPagarValor || alvo.dataset.aPagarvalor || '0');
         if (Number.isNaN(atual)) atual = 0;
         if (eraAberto && !seraAberto) atual -= valor;
@@ -29,6 +33,18 @@
         if (atual < 0.005 && atual > -0.005) atual = 0;
         alvo.dataset.aPagarValor = String(atual);
         alvo.textContent = formatarBrl(atual);
+    }
+
+    function atualizarVinculo(select, dados) {
+        const linha = select.closest('tr');
+        const alvo = linha?.querySelector('[data-vinculo-cartao]');
+        if (!alvo) return;
+        if (dados.fatura_url && dados.cartao_nome) {
+            alvo.outerHTML = `<a class="vinculo-cartao" href="${dados.fatura_url}" data-vinculo-cartao>${dados.cartao_nome}</a>`;
+        } else {
+            alvo.innerHTML = '';
+            alvo.removeAttribute('href');
+        }
     }
 
     function escolherCartao() {
@@ -109,6 +125,7 @@
             const dados = await salvarStatus(select, status, cartaoId);
             ajustarAPagar(select, dados.status);
             aplicarClasseStatus(select, dados.status);
+            atualizarVinculo(select, dados);
         } catch (erro) {
             select.value = anterior;
             window.alert(erro.message);

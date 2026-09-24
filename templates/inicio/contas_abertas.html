@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% load financeiro %}
+
+{% block title %}Contas a pagar{% endblock %}
+{% block kicker %}Início{% endblock %}
+{% block heading %}Contas a pagar{% endblock %}
+{% block intro %}
+    <p class="intro-pagina">Tudo que ainda está pendente, ordenado pelo vencimento. Clique para abrir o lançamento.</p>
+{% endblock %}
+
+{% block classe_corpo %}com-filtros{% endblock %}
+{% block filtros %}
+{% include "includes/barra_filtros.html" with esconder_busca=1 %}
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <p class="totais">{{ abertos_total }} conta(s) · {{ abertos_valor|brl }}</p>
+    <div class="tabela-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Origem</th>
+                    <th>Descrição</th>
+                    <th>Mês</th>
+                    <th>Vencimento</th>
+                    <th>Valor</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in abertos %}
+                    <tr>
+                        <td>{{ item.origem }}</td>
+                        <td><a href="{{ item.url }}">{{ item.descricao }}</a></td>
+                        <td>{{ item.mes|stringformat:"02d" }}/{{ item.ano }}</td>
+                        <td>
+                            {% if item.data_vencimento %}
+                                <span class="vencimento {% if item.situacao %}vencimento-{{ item.situacao }}{% endif %}">
+                                    {{ item.data_vencimento|data_br }}
+                                    {% if item.situacao == 'atrasada' %}<small>Atrasada</small>{% endif %}
+                                    {% if item.situacao == 'vence_hoje' %}<small>Vence hoje</small>{% endif %}
+                                </span>
+                            {% else %}
+                                <span class="muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ item.valor|brl }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5">
+                            {% include "includes/empty_state.html" with mensagem="Nenhuma conta a pagar neste recorte." url='' %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

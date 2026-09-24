@@ -1,24 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}{% if form.instance.pk %}Editar despesa{% else %}Nova despesa básica{% endif %}{% endblock %}
-{% block kicker %}Despesas básicas{% endblock %}
-{% block heading %}{% if form.instance.pk %}Editar despesa{% else %}Nova despesa básica{% endif %}{% endblock %}
+{% block title %}{% if form.instance.pk %}Editar despesa{% else %}Nova despesa da casa{% endif %}{% endblock %}
+{% block kicker %}Despesas da casa{% endblock %}
+{% block heading %}{% if form.instance.pk %}Editar despesa{% else %}Nova despesa da casa{% endif %}{% endblock %}
+{% block intro %}
+    <p class="intro-pagina">Informe o vencimento para aparecer em Contas a pagar na ordem certa.</p>
+{% endblock %}
 
 {% block content %}
-<section class="card formulario">
-    <form method="post">
-        {% csrf_token %}
-        {% for campo in form %}
-            <div class="campo">
-                <label for="{{ campo.id_for_label }}">{{ campo.label }}</label>
-                {{ campo }}
-                {{ campo.errors }}
-            </div>
-        {% endfor %}
-        <div class="acoes">
-            <button class="botao" type="submit">Salvar</button>
-            <a class="botao-secundario" href="{% url 'despesas_basicas:lista' %}">Cancelar</a>
-        </div>
-    </form>
-</section>
+{% include "includes/form_padrao.html" %}
 {% endblock %}

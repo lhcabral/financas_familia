@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Cartões cadastrados{% endblock %}
+{% block kicker %}Cartões{% endblock %}
+{% block heading %}Gerenciar cartões{% endblock %}
+{% block intro %}
+    <p class="intro-pagina">Edite nome, titular e vencimento. Excluir um cartão também remove as faturas dele.</p>
+{% endblock %}
+
+{% block content %}
+<div class="acoes-pagina">
+    <a class="botao-secundario" href="{{ voltar }}">Voltar às faturas</a>
+    <a class="botao" href="{% url 'cartoes:cartao_novo' %}">Novo cartão</a>
+</div>
+<div class="card">
+    <div class="tabela-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Titular</th>
+                    <th>Vencimento</th>
+                    <th>Faturas</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cartao in cartoes %}
+                    <tr>
+                        <td>{{ cartao.nome }}</td>
+                        <td>{{ cartao.titular|default:'—' }}</td>
+                        <td>{% if cartao.dia_vencimento %}Dia {{ cartao.dia_vencimento }}{% else %}—{% endif %}</td>
+                        <td>{{ cartao.faturas.count }}</td>
+                        <td class="acoes">
+                            <a class="botao-secundario botao-pequeno" href="{% url 'cartoes:cartao_editar' cartao.pk %}">Editar</a>
+                            <a class="botao-perigo botao-pequeno" href="{% url 'cartoes:cartao_excluir' cartao.pk %}">Excluir</a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="5">Nenhum cartão cadastrado.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -2,30 +2,36 @@
 {% load financeiro %}
 
 {% block title %}Receitas{% endblock %}
-{% block kicker %}Início{% endblock %}
+{% block kicker %}Entradas{% endblock %}
 {% block heading %}Receitas{% endblock %}
+{% block intro %}
+    <p class="intro-pagina">Registre o que já entrou e o que ainda está previsto. Salários recorrentes podem ser gerados no mês seguinte.</p>
+{% endblock %}
+
+{% block classe_corpo %}com-filtros{% endblock %}
+{% block filtros %}
+{% include "includes/barra_filtros.html" with busca_placeholder="Buscar fonte ou observação" status_opcoes=status_receita %}
+{% endblock %}
 
 {% block content %}
-<div class="acoes-pagina">
-    <div class="chips">
-        <a href="?ano={{ ano }}" class="{% if not request.GET.mes %}ativo{% endif %}">Todos</a>
-        {% for numero, nome in meses_nav %}
-            <a href="?ano={{ ano }}&mes={{ numero }}" class="{% if request.GET.mes == numero|stringformat:'s' %}ativo{% endif %}">{{ nome }}</a>
-        {% endfor %}
-    </div>
-    <a class="botao" href="{% url 'inicio:receita_nova' %}?ano={{ ano }}{% if request.GET.mes %}&mes={{ request.GET.mes }}{% endif %}">Nova receita</a>
-</div>
+{% url 'inicio:receita_nova' as nova_url %}
+{% url 'inicio:receitas_gerar' as gerar_url %}
+{% include "includes/acoes_lista.html" with nova_url=nova_url nova_label="Nova receita" gerar_url=gerar_url %}
 
 <div class="card">
-    <p class="totais">Total: <strong>{{ total|brl }}</strong></p>
+    <p class="totais">
+        Total {{ total|brl }} ·
+        A receber <span data-a-receber data-a-pagar-valor="{{ a_receber }}">{{ a_receber|brl }}</span>
+    </p>
     <div class="tabela-wrap">
         <table>
             <thead>
                 <tr>
                     <th>Mês</th>
                     <th>Fonte</th>
+                    <th>Previsto para</th>
                     <th>Valor</th>
-                    <th>Observação</th>
+                    <th>Status</th>
                     <th></th>
                 </tr>
             </thead>
@@ -33,17 +39,29 @@
                 {% for receita in receitas %}
                     <tr>
                         <td>{{ receita.get_mes_display }}</td>
-                        <td>{{ receita.get_fonte_display }}</td>
+                        <td>
+                            {{ receita.get_fonte_display }}
+                            {% if receita.observacao %}<div class="muted">{{ receita.observacao }}</div>{% endif %}
+                            {% if receita.recorrente %}<span class="chip-mini">Recorrente</span>{% endif %}
+                        </td>
+                        <td>{% include "includes/badge_vencimento.html" with objeto=receita %}</td>
                         <td>{{ receita.valor|brl }}</td>
-                        <td>{{ receita.observacao }}</td>
+                        <td>
+                            {% url 'inicio:receita_status' receita.pk as status_url %}
+                            {% include "includes/seletor_status.html" with objeto=receita url=status_url permite_cartao=False opcoes=status_receita valor=receita.valor %}
+                        </td>
                         <td class="acoes">
                             <button type="button" class="botao-secundario botao-pequeno" data-duplicar="{% url 'inicio:receita_duplicar' receita.pk %}">Duplicar</button>
-                            <a class="botao-secundario botao-pequeno" href="{% url 'inicio:receita_editar' receita.pk %}">Editar</a>
-                            <a class="botao-perigo botao-pequeno" href="{% url 'inicio:receita_excluir' receita.pk %}">Excluir</a>
+                            <a class="botao-secundario botao-pequeno" href="{% url 'inicio:receita_editar' receita.pk %}?{{ request.GET.urlencode }}">Editar</a>
+                            <a class="botao-perigo botao-pequeno" href="{% url 'inicio:receita_excluir' receita.pk %}?{{ request.GET.urlencode }}">Excluir</a>
                         </td>
                     </tr>
                 {% empty %}
-                    <tr><td colspan="5">Nenhuma receita cadastrada.</td></tr>
+                    <tr>
+                        <td colspan="6">
+                            {% include "includes/empty_state.html" with mensagem="Nenhuma receita neste recorte." url=nova_url rotulo="Cadastrar receita" %}
+                        </td>
+                    </tr>
                 {% endfor %}
             </tbody>
         </table>

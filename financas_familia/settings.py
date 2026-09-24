@@ -2,15 +2,40 @@
 Django settings for financas_familia project.
 """
 
+import os
 from pathlib import Path
+from urllib.parse import unquote, urlparse
+
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-^g3_igfjl^3k@x@ipn!usu*^2sg*vnd7snqn=e85qqs@125a4+'
+load_dotenv(BASE_DIR.parent / '.env')
+load_dotenv(BASE_DIR / '.env')
 
-DEBUG = True
+SECRET_KEY = os.environ.get(
+    'SECRET_KEY',
+    'django-insecure-^g3_igfjl^3k@x@ipn!usu*^2sg*vnd7snqn=e85qqs@125a4+',
+)
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver']
+DEBUG = os.environ.get('DEBUG', 'True').lower() in ('1', 'true', 'yes', 'on')
+
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.environ.get(
+        'ALLOWED_HOSTS',
+        'localhost,127.0.0.1,testserver',
+    ).split(',')
+    if host.strip()
+]
+if 'testserver' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('testserver')
+
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',')
+    if origin.strip()
+]
 
 
 INSTALLED_APPS = [
@@ -58,12 +83,39 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'financas_familia.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+def _banco_a_partir_da_url(url):
+    parsed = urlparse(url)
+    scheme = parsed.scheme.lower()
+    if scheme in ('postgres', 'postgresql'):
+        return {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': unquote(parsed.path.lstrip('/')),
+            'USER': unquote(parsed.username or ''),
+            'PASSWORD': unquote(parsed.password or ''),
+            'HOST': parsed.hostname or '',
+            'PORT': str(parsed.port or ''),
+        }
+    if scheme == 'sqlite':
+        caminho = unquote(parsed.path)
+        if caminho != ':memory:' and not Path(caminho).is_absolute():
+            caminho = BASE_DIR / caminho.lstrip('/')
+        return {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': caminho,
+        }
+    raise ValueError(f'Esquema de banco não suportado: {scheme}')
+
+
+DATABASE_URL = os.environ.get('DATABASE_URL', '').strip()
+if DATABASE_URL:
+    DATABASES = {'default': _banco_a_partir_da_url(DATABASE_URL)}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
 
 AUTH_PASSWORD_VALIDATORS = [
     {

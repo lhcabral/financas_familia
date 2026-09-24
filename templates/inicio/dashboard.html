@@ -1,15 +1,22 @@
 {% extends "base.html" %}
-{% load financeiro %}
+{% load static financeiro %}
 
 {% block title %}Início {{ ano }}{% endblock %}
 {% block kicker %}Visão geral{% endblock %}
 {% block heading %}Balanço de {{ ano }}{% endblock %}
+{% block intro %}
+    <p class="intro-pagina">Acompanhe o ano, veja o que ainda falta pagar e entre no mês com um clique.</p>
+{% endblock %}
 
 {% block content %}
-<section class="kpis">
+<section class="kpis kpis-5">
     <article class="card kpi">
         <div class="rotulo">Receitas</div>
         <div class="valor">{{ resumo.receita_total|brl }}</div>
+    </article>
+    <article class="card kpi">
+        <div class="rotulo">A receber</div>
+        <div class="valor">{{ resumo.a_receber_total|brl }}</div>
     </article>
     <article class="card kpi">
         <div class="rotulo">Despesas</div>
@@ -25,47 +32,75 @@
     </article>
 </section>
 
+<section class="grade-graficos">
+    <article class="card grafico-card">
+        <h2>Receitas × despesas</h2>
+        <div class="grafico-wrap grafico-barras">
+            <canvas id="grafico-mensal"></canvas>
+        </div>
+    </article>
+    <article class="card grafico-card">
+        <h2>Para onde foi o dinheiro</h2>
+        <div class="grafico-wrap grafico-rosca">
+            <canvas id="grafico-composicao"></canvas>
+        </div>
+    </article>
+</section>
+
 <div class="grade-2">
     <section>
         <div class="meses">
-            {% for mes in resumo.meses %}
-                <article class="card mes-card">
+            {% for mes in resumo.meses_com_dados %}
+                <article class="card mes-card {% if mes.mes == mes_atual and ano == ano_atual %}atual{% endif %}">
                     <h2>{{ mes.nome }}</h2>
                     {% for chave, cat in mes.categorias.items %}
-                        <div class="linha">
+                        <a class="linha" href="{% url cat.url_nome %}?ano={{ ano }}&mes={{ mes.mes }}">
                             <span>{{ cat.nome }}</span>
-                            <span>{{ cat.total|brl }} <small class="muted">à pagar {{ cat.a_pagar|brl }}</small></span>
-                        </div>
+                            <span>{{ cat.total|brl }} <small class="muted">a pagar {{ cat.a_pagar|brl }}</small></span>
+                        </a>
                     {% endfor %}
-                    <div class="linha">
+                    <a class="linha" href="{% url 'inicio:receitas' %}?ano={{ ano }}&mes={{ mes.mes }}">
                         <strong>Receita</strong>
                         <strong>{{ mes.receita_total|brl }}</strong>
-                    </div>
+                    </a>
                     <div class="linha">
                         <strong>Saldo</strong>
                         <strong class="{{ mes.saldo|saldo_classe }}">{{ mes.saldo|brl }}</strong>
                     </div>
                 </article>
+            {% empty %}
+                <p class="ajuda">Nenhum mês com lançamentos neste ano.</p>
             {% endfor %}
         </div>
     </section>
 
     <aside class="card">
-        <h2>Contas em aberto</h2>
+        <div class="cabecalho-painel">
+            <h2>Contas a pagar</h2>
+            <a href="{% url 'inicio:contas_a_pagar' %}?ano={{ ano }}">Ver todas</a>
+        </div>
         <p class="ajuda">{{ abertos_total }} lançamento(s) · {{ abertos_valor|brl }}</p>
         <ul class="lista-abertos">
             {% for item in abertos %}
                 <li>
-                    <div>
+                    <a href="{{ item.url }}">
                         <strong>{{ item.descricao }}</strong>
                         <div class="muted">{{ item.origem }} · {{ item.mes|stringformat:"02d" }}/{{ ano }}</div>
-                    </div>
+                        {% if item.situacao == 'atrasada' %}<span class="badge-mini atrasada">Atrasada</span>{% endif %}
+                        {% if item.situacao == 'vence_hoje' %}<span class="badge-mini hoje">Vence hoje</span>{% endif %}
+                    </a>
                     <span>{{ item.valor|brl }}</span>
                 </li>
             {% empty %}
-                <li>Nenhuma conta em aberto neste ano.</li>
+                <li>Nenhuma conta a pagar neste ano.</li>
             {% endfor %}
         </ul>
     </aside>
 </div>
+{{ dados_grafico|json_script:"dados-grafico" }}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="{% static 'js/dashboard.js' %}"></script>
 {% endblock %}

@@ -1,0 +1,10 @@
+{% load financeiro %}
+{% if objeto.data_vencimento %}
+    <span class="vencimento {% if objeto.situacao_vencimento %}vencimento-{{ objeto.situacao_vencimento }}{% endif %}">
+        {{ objeto.data_vencimento|data_br }}
+        {% if objeto.situacao_vencimento == 'atrasada' %}<small>Atrasada</small>{% endif %}
+        {% if objeto.situacao_vencimento == 'vence_hoje' %}<small>Vence hoje</small>{% endif %}
+    </span>
+{% else %}
+    <span class="muted">—</span>
+{% endif %}

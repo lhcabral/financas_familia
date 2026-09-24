@@ -22,14 +22,22 @@ STATUS_FECHADO = 'fechado'
 STATUS_CARTAO = 'cartao'
 
 STATUS_CHOICES = [
-    (STATUS_ABERTO, 'Aberto'),
-    (STATUS_FECHADO, 'Fechado'),
-    (STATUS_CARTAO, 'Cartão'),
+    (STATUS_ABERTO, 'A pagar'),
+    (STATUS_FECHADO, 'Pago'),
+    (STATUS_CARTAO, 'No cartão'),
 ]
 
 STATUS_PAGAMENTO = [
-    (STATUS_ABERTO, 'Aberto'),
-    (STATUS_FECHADO, 'Fechado'),
+    (STATUS_ABERTO, 'A pagar'),
+    (STATUS_FECHADO, 'Paga'),
+]
+
+STATUS_PREVISTO = 'previsto'
+STATUS_RECEBIDO = 'recebido'
+
+STATUS_RECEITA_CHOICES = [
+    (STATUS_PREVISTO, 'Previsto'),
+    (STATUS_RECEBIDO, 'Recebido'),
 ]
 
 

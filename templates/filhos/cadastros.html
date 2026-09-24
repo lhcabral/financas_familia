@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Filhos cadastrados{% endblock %}
+{% block kicker %}Filhos{% endblock %}
+{% block heading %}Gerenciar filhos{% endblock %}
+{% block intro %}
+    <p class="intro-pagina">Cadastre, renomeie ou remova os filhos que aparecem nos filtros das despesas.</p>
+{% endblock %}
+
+{% block content %}
+<div class="acoes-pagina">
+    <a class="botao-secundario" href="{{ voltar }}">Voltar às despesas</a>
+    <a class="botao" href="{% url 'filhos:filho_novo' %}">Novo filho</a>
+</div>
+<div class="card">
+    <div class="tabela-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Despesas</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for filho in filhos %}
+                    <tr>
+                        <td>{{ filho.nome }}</td>
+                        <td>{{ filho.despesas.count }}</td>
+                        <td class="acoes">
+                            <a class="botao-secundario botao-pequeno" href="{% url 'filhos:filho_editar' filho.pk %}">Editar</a>
+                            <a class="botao-perigo botao-pequeno" href="{% url 'filhos:filho_excluir' filho.pk %}">Excluir</a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="3">Nenhum filho cadastrado.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

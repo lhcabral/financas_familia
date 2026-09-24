@@ -1,6 +1,7 @@
 from django import forms
 
 from imoveis_transporte.models import Consorcio, ParcelaConsorcio
+from inicio.forms import RecorrenciaFormMixin
 
 
 class ConsorcioForm(forms.ModelForm):
@@ -14,12 +15,12 @@ class ConsorcioForm(forms.ModelForm):
         }
 
 
-class ParcelaConsorcioForm(forms.ModelForm):
+class ParcelaConsorcioForm(RecorrenciaFormMixin, forms.ModelForm):
     class Meta:
         model = ParcelaConsorcio
         fields = [
             'consorcio', 'ano', 'mes', 'rotulo_parcela',
-            'numero_parcela', 'valor', 'status',
+            'numero_parcela', 'valor', 'status', 'dia_vencimento', 'recorrente',
         ]
         widgets = {
             'consorcio': forms.Select(attrs={'class': 'form-select'}),
@@ -29,4 +30,11 @@ class ParcelaConsorcioForm(forms.ModelForm):
             'numero_parcela': forms.NumberInput(attrs={'class': 'form-control'}),
             'valor': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'status': forms.Select(attrs={'class': 'form-select'}),
+            'dia_vencimento': forms.NumberInput(attrs={'class': 'form-control', 'min': 1, 'max': 31}),
+            'recorrente': forms.CheckboxInput(attrs={'class': 'form-check'}),
         }
+
+    field_order = [
+        'consorcio', 'ano', 'mes', 'rotulo_parcela', 'numero_parcela',
+        'valor', 'status', 'dia_vencimento', 'recorrente', 'repetir_meses',
+    ]
