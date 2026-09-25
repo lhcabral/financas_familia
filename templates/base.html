@@ -29,7 +29,14 @@
                 <a href="{% url 'cartoes:lista' %}?ano={{ ano_selecionado }}" class="{% if request.resolver_match.app_name == 'cartoes' %}ativo{% endif %}">Cartões</a>
                 <a href="{% url 'imoveis_transporte:lista' %}?ano={{ ano_selecionado }}" class="{% if request.resolver_match.app_name == 'imoveis_transporte' %}ativo{% endif %}">Imóveis e carro</a>
             </nav>
-            <p class="sidebar-nota">Controle mensal de {{ ano_selecionado }}.</p>
+            <div class="sessao-usuario">
+                <p class="sidebar-nota">Controle mensal de {{ ano_selecionado }}.</p>
+                <form method="post" action="{% url 'sair' %}">
+                    {% csrf_token %}
+                    <span>{{ user.get_username }}</span>
+                    <button type="submit" class="botao-sair">Sair</button>
+                </form>
+            </div>
         </aside>
 
         <main class="conteudo">

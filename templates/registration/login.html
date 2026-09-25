@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Entrar · Finanças da família</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body>
+    <main class="pagina-login">
+        <section class="cartao-login">
+            <div class="brand brand-login">
+                <span class="brand-mark">FF</span>
+                <div>
+                    <strong>Finanças</strong>
+                    <small>da família</small>
+                </div>
+            </div>
+            <h1>Entrar</h1>
+            <p class="intro-pagina">Informe usuário e senha para acessar o controle da família.</p>
+            <form method="post" class="formulario">
+                {% csrf_token %}
+                {% if form.non_field_errors %}
+                    <p class="alerta alerta-error">{{ form.non_field_errors|striptags }}</p>
+                {% endif %}
+                {% for field in form %}
+                    <div class="campo">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {{ field.errors }}
+                    </div>
+                {% endfor %}
+                <input type="hidden" name="next" value="{{ next }}">
+                <button class="botao" type="submit">Entrar</button>
+            </form>
+        </section>
+    </main>
+</body>
+</html>
