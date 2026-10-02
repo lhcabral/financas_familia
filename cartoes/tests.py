@@ -3,6 +3,7 @@ from io import BytesIO
 from pathlib import Path
 
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import models
 from django.test import TestCase
 
 from cartoes.models import Cartao, Fatura, ItemFatura
@@ -49,7 +50,7 @@ class ParcelasItemFaturaTests(TestCase):
             'Mercado,80.50,1,1\n'
             'TV,200.00,4,2\n'
         ).encode('utf-8')
-        criados, propagados, erros = importar_itens_arquivo(self.fatura, BytesIO(csv_bytes))
+        criados, propagados, _, erros = importar_itens_arquivo(self.fatura, BytesIO(csv_bytes))
         self.assertEqual(erros, [])
         self.assertEqual(criados, 2)
         self.assertEqual(propagados, 2)
@@ -67,7 +68,7 @@ class ParcelasItemFaturaTests(TestCase):
             '10/08;PAGTO. POR DEB EM C/C ;0,00;-4469,98\n'
             '08/08;BURGER KING ;0,00;138,70\n'
         ).encode('latin-1')
-        criados, propagados, erros = importar_itens_arquivo(self.fatura, BytesIO(csv_bytes))
+        criados, propagados, _, erros = importar_itens_arquivo(self.fatura, BytesIO(csv_bytes))
         self.assertEqual(erros, [])
         self.assertEqual(criados, 3)
         self.assertEqual(propagados, 3)
@@ -85,7 +86,7 @@ class ParcelasItemFaturaTests(TestCase):
             '2026-07-03,Mp *Onixsemijoias - Parcela 2/4,"82,49"\n'
         ).encode('utf-8')
         arquivo = SimpleUploadedFile('Nubank_2026-08-10.csv', csv_bytes, content_type='text/csv')
-        criados, propagados, erros = importar_itens_arquivo(self.fatura, arquivo)
+        criados, propagados, _, erros = importar_itens_arquivo(self.fatura, arquivo)
         self.assertEqual(erros, [])
         self.assertEqual(criados, 3)
         # Parcela 2/4 → propaga 3 e 4
@@ -94,13 +95,54 @@ class ParcelasItemFaturaTests(TestCase):
         self.assertEqual(onix.quantidade_parcelas, 4)
         self.assertFalse(self.fatura.itens.filter(descricao__icontains='Pagamento').exists())
 
+    def test_reimportar_fatura_fechada_adiciona_somente_novos(self):
+        parcial = (
+            'date,title,amount\n'
+            '2026-07-10,Bmb *Alares,"132,89"\n'
+            '2026-07-03,Mp *Onixsemijoias - Parcela 2/4,"82,49"\n'
+        ).encode('utf-8')
+        fechada = (
+            'date,title,amount\n'
+            '2026-07-10,Bmb *Alares,"132,89"\n'
+            '2026-07-03,Mp *Onixsemijoias - Parcela 2/4,"82,49"\n'
+            '2026-07-20,Padaria,"15,00"\n'
+        ).encode('utf-8')
+        importar_itens_arquivo(self.fatura, SimpleUploadedFile('parcial.csv', parcial))
+        criados, propagados, ignorados, erros = importar_itens_arquivo(
+            self.fatura, SimpleUploadedFile('fechada.csv', fechada),
+        )
+        self.assertEqual(erros, [])
+        self.assertEqual(criados, 1)
+        self.assertEqual(ignorados, 2)
+        self.assertEqual(propagados, 0)
+        self.assertEqual(self.fatura.itens.count(), 3)
+        out = Fatura.objects.get(cartao=self.cartao, ano=2026, mes=10)
+        self.assertEqual(out.itens.filter(descricao='Mp *Onixsemijoias').count(), 1)
+
+    def test_reimportar_ignora_diferenca_de_maiusculas_e_espacos(self):
+        ItemFatura.objects.create(fatura=self.fatura, descricao='Mercado  Bom', valor=Decimal('80.5'))
+        csv_bytes = 'descricao,valor\nMERCADO BOM,"80,50"\n'.encode('utf-8')
+        criados, _, ignorados, _ = importar_itens_arquivo(self.fatura, BytesIO(csv_bytes))
+        self.assertEqual((criados, ignorados), (0, 1))
+
+    def test_reimportar_mantem_compras_identicas_repetidas(self):
+        csv_bytes = (
+            'descricao,valor\n'
+            'Cafe,"8,00"\n'
+            'Cafe,"8,00"\n'
+        ).encode('utf-8')
+        ItemFatura.objects.create(fatura=self.fatura, descricao='Cafe', valor=Decimal('8.00'))
+        criados, _, ignorados, _ = importar_itens_arquivo(self.fatura, BytesIO(csv_bytes))
+        self.assertEqual((criados, ignorados), (1, 1))
+        self.assertEqual(self.fatura.itens.filter(descricao='Cafe').count(), 2)
+
     def test_importa_porto_xlsx(self):
         caminho = AMOSTRAS / 'Fatura_Porto_Seguro_2026-09-28.xlsx'
         if not caminho.exists():
             self.skipTest('Arquivo de amostra Porto não encontrado')
         with caminho.open('rb') as fh:
             arquivo = SimpleUploadedFile(caminho.name, fh.read())
-        criados, propagados, erros = importar_itens_arquivo(self.fatura, arquivo)
+        criados, propagados, _, erros = importar_itens_arquivo(self.fatura, arquivo)
         self.assertEqual(erros, [])
         self.assertGreater(criados, 10)
         self.assertFalse(self.fatura.itens.filter(descricao__iexact='PAGAMENTO').exists())
@@ -115,3 +157,16 @@ class ParcelasItemFaturaTests(TestCase):
         anuidade = self.fatura.itens.get(descricao='ANUIDADE DIFERENCIADA')
         self.assertEqual(anuidade.parcela_atual, 2)
         self.assertEqual(anuidade.quantidade_parcelas, 12)
+
+        total_itens = Fatura.objects.filter(cartao=self.cartao).aggregate(
+            n=models.Count('itens'),
+        )['n']
+        criados2, propagados2, ignorados2, _ = importar_itens_arquivo(
+            self.fatura, SimpleUploadedFile(caminho.name, caminho.read_bytes()),
+        )
+        self.assertEqual((criados2, propagados2), (0, 0))
+        self.assertEqual(ignorados2, criados)
+        self.assertEqual(
+            Fatura.objects.filter(cartao=self.cartao).aggregate(n=models.Count('itens'))['n'],
+            total_itens,
+        )

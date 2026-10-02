@@ -128,7 +128,7 @@ def importar_itens(request, pk):
         return _redirect_detalhe(request, pk)
 
     try:
-        criados, propagados, erros = importar_itens_arquivo(
+        criados, propagados, ignorados, erros = importar_itens_arquivo(
             fatura, form.cleaned_data['arquivo'],
         )
     except ValueError as exc:
@@ -138,7 +138,14 @@ def importar_itens(request, pk):
         msg = f'{criados} item(ns) importado(s).'
         if propagados:
             msg += f' {propagados} parcela(s) lançada(s) nas faturas seguintes.'
+        if ignorados:
+            msg += f' {ignorados} item(ns) já existente(s) ignorado(s).'
         messages.success(request, msg)
+    elif ignorados:
+        messages.success(
+            request,
+            f'Nenhum item novo: {ignorados} item(ns) do arquivo já estava(m) na fatura.',
+        )
     elif not erros:
         messages.warning(request, 'Nenhum item encontrado no arquivo.')
     if erros:

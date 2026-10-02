@@ -1,6 +1,7 @@
 import csv
 import io
 import re
+from collections import Counter
 from decimal import Decimal, InvalidOperation
 
 from django.db import transaction
@@ -103,7 +104,11 @@ def importar_itens_arquivo(fatura, arquivo):
 
     criados = 0
     propagados = 0
+    ignorados = 0
     erros = []
+    # Contagem (e não conjunto) para preservar compras idênticas legítimas
+    # que aparecem mais de uma vez na mesma fatura.
+    existentes = Counter(_chave_item(item) for item in fatura.itens.all())
 
     for indice, linha in linhas:
         try:
@@ -113,11 +118,26 @@ def importar_itens_arquivo(fatura, arquivo):
             continue
         if dados is None:
             continue
+        chave = _chave_item(ItemFatura(**dados))
+        if existentes[chave] > 0:
+            existentes[chave] -= 1
+            ignorados += 1
+            continue
         item = ItemFatura(fatura=fatura, **dados)
         propagados += salvar_item_com_parcelas(item)
         criados += 1
 
-    return criados, propagados, erros
+    return criados, propagados, ignorados, erros
+
+
+def _chave_item(item):
+    descricao = re.sub(r'\s+', ' ', (item.descricao or '').strip()).casefold()
+    return (
+        descricao,
+        Decimal(item.valor).quantize(Decimal('0.01')),
+        item.quantidade_parcelas or 1,
+        item.parcela_atual or 1,
+    )
 
 
 # Compatibilidade com código/testes anteriores.
