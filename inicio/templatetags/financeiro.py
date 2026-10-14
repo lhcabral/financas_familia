@@ -43,6 +43,16 @@ def saldo_classe(valor):
 
 
 @register.filter
+def percentual(value, casas=1):
+    if value is None or value == '':
+        return '—'
+    try:
+        return f'{float(value):.{int(casas)}f}%'.replace('.', ',')
+    except (TypeError, ValueError):
+        return '—'
+
+
+@register.filter
 def data_br(value):
     if not value:
         return '—'

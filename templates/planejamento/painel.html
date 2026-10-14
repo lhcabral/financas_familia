@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+{% load static financeiro %}
+
+{% block title %}Planejamento {{ ano }}{% endblock %}
+{% block kicker %}Planejamento{% endblock %}
+{% block heading %}Como melhorar as finanças{% endblock %}
+{% block intro %}
+    <p class="intro-pagina">Diagnóstico de {{ periodo_rotulo }} com base nos lançamentos do sistema e nos indicadores do Banco Central.</p>
+{% endblock %}
+
+{% block content %}
+<div class="chips chips-periodo">
+    <a href="?{% qs request mes='todos' aporte='' %}" class="{% if not mes_filtro %}ativo{% endif %}">Ano até agora</a>
+    {% for numero, nome in meses_nav %}
+        <a href="?{% qs request mes=numero aporte='' %}" class="{% if mes_filtro == numero %}ativo{% endif %}">{{ nome|slice:':3' }}</a>
+    {% endfor %}
+</div>
+
+<section class="card secao-planejamento">
+    <div class="cabecalho-painel">
+        <h2>Indicadores do Banco Central</h2>
+        <form method="post" action="{% url 'planejamento:atualizar_indicadores' %}?{{ request.GET.urlencode }}">
+            {% csrf_token %}
+            <button type="submit" class="botao-secundario botao-pequeno">Atualizar agora</button>
+        </form>
+    </div>
+    {% if erros_bcb %}
+        <p class="alerta alerta-error">Não foi possível atualizar agora; usando os últimos valores salvos.</p>
+    {% endif %}
+    <div class="kpis kpis-5 indicadores">
+        {% for item in indicadores_lista %}
+            <article class="kpi">
+                <div class="rotulo">{{ item.nome }}</div>
+                {% if item.valor is not None %}
+                    <div class="valor">{{ item.valor|percentual:2 }}</div>
+                    <small class="muted">{{ item.unidade }} · {{ item.data_referencia|date:"d/m/Y" }}</small>
+                {% else %}
+                    <div class="valor muted">—</div>
+                    <small class="muted">indisponível</small>
+                {% endif %}
+            </article>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="card secao-planejamento">
+    <h2>Sugestões</h2>
+    <ul class="lista-sugestoes">
+        {% for sugestao in sugestoes %}
+            <li class="sugestao nivel-{{ sugestao.nivel }}">
+                <span class="selo-nivel">{{ sugestao.rotulo }}</span>
+                <div>
+                    <strong>{{ sugestao.titulo }}</strong>
+                    <p>{{ sugestao.texto }}</p>
+                </div>
+                {% if sugestao.economia_mensal %}
+                    <div class="economia">
+                        <small class="muted">impacto</small>
+                        <strong>{{ sugestao.economia_mensal|brl }}</strong>
+                        <small class="muted">por mês</small>
+                    </div>
+                {% endif %}
+            </li>
+        {% empty %}
+            <li class="ajuda">Ainda não há dados suficientes para gerar sugestões.</li>
+        {% endfor %}
+    </ul>
+</section>
+
+<div class="grade-planejamento">
+    <section class="card">
+        <h2>Diagnóstico de {{ periodo_rotulo }}</h2>
+        <div class="kpis kpis-mini">
+            <div class="kpi"><div class="rotulo">Receitas</div><div class="valor">{{ diagnostico.receita|brl }}</div></div>
+            <div class="kpi"><div class="rotulo">Despesas</div><div class="valor">{{ diagnostico.despesa|brl }}</div></div>
+            <div class="kpi"><div class="rotulo">Sobra</div><div class="valor {{ diagnostico.sobra|saldo_classe }}">{{ diagnostico.sobra|brl }}</div></div>
+            <div class="kpi"><div class="rotulo">Da renda guardada</div><div class="valor {{ diagnostico.sobra|saldo_classe }}">{{ diagnostico.taxa_poupanca|percentual }}</div></div>
+        </div>
+
+        <h3 class="subtitulo">Regra 50/30/20</h3>
+        <p class="ajuda">Até 50% da renda em necessidades, até 30% em gastos variáveis e pelo menos 20% guardados. Cartões contam como variáveis.</p>
+        {% for faixa in diagnostico.regra_50_30_20 %}
+            <div class="faixa-regra">
+                <div class="faixa-topo">
+                    <span><strong>{{ faixa.nome }}</strong> <small class="muted">{{ faixa.descricao }}</small></span>
+                    <span class="{% if faixa.dentro is False %}saldo-negativo{% elif faixa.dentro %}saldo-positivo{% endif %}">
+                        {{ faixa.pct|percentual }} <small class="muted">{% if faixa.teto %}até{% else %}mín.{% endif %} {{ faixa.meta }}%</small>
+                    </span>
+                </div>
+                <div class="barra-progresso {% if faixa.dentro is False %}fora{% endif %}">
+                    <span style="width: {{ faixa.largura|stringformat:'.1f' }}%"></span>
+                    <i style="left: {{ faixa.meta }}%"></i>
+                </div>
+            </div>
+        {% endfor %}
+
+        <h3 class="subtitulo">Peso de cada categoria</h3>
+        <div class="tabela-wrap">
+            <table>
+                <thead><tr><th>Categoria</th><th>Total</th><th>% da renda</th></tr></thead>
+                <tbody>
+                    {% for cat in diagnostico.categorias %}
+                        <tr><td>{{ cat.nome }}</td><td>{{ cat.total|brl }}</td><td>{{ cat.pct|percentual }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Reserva de emergência</h2>
+        {% if reserva.meta %}
+            <p class="ajuda">Meta: {{ reserva.meses_meta }} meses do gasto médio de {{ reserva.gasto_medio|brl }}.</p>
+            <div class="reserva-numeros">
+                <div><small class="muted">Guardado</small><strong>{{ reserva.atual|brl }}</strong></div>
+                <div><small class="muted">Meta</small><strong>{{ reserva.meta|brl }}</strong></div>
+                <div><small class="muted">Falta</small><strong class="{% if reserva.falta %}saldo-negativo{% else %}saldo-positivo{% endif %}">{{ reserva.falta|brl }}</strong></div>
+            </div>
+            <div class="barra-progresso grande">
+                <span style="width: {{ reserva.progresso|default:0|stringformat:'.1f' }}%"></span>
+            </div>
+            <p class="ajuda">
+                {{ reserva.progresso|percentual:0 }} da meta.
+                {% if reserva.falta and reserva.meses_para_meta %}
+                    Guardando {{ reserva.sobra_media|brl }} por mês no CDI, faltam cerca de {{ reserva.meses_para_meta }} meses.
+                {% elif reserva.falta %}
+                    Sem sobra mensal no momento para chegar à meta.
+                {% endif %}
+            </p>
+        {% else %}
+            <p class="ajuda">Ainda não há despesas lançadas para calcular a meta.</p>
+        {% endif %}
+        <form method="post" action="{% url 'planejamento:perfil' %}?{{ request.GET.urlencode }}" class="formulario form-reserva">
+            {% csrf_token %}
+            {% include "includes/form_campos.html" with form=form_perfil %}
+            <button type="submit" class="botao">Salvar</button>
+        </form>
+    </section>
+</div>
+
+<section class="card secao-planejamento">
+    <div class="cabecalho-painel">
+        <h2>Simulação: quanto a sobra pode render</h2>
+    </div>
+    <form method="get" class="form-aporte">
+        <input type="hidden" name="ano" value="{{ ano }}">
+        {% if mes_filtro %}<input type="hidden" name="mes" value="{{ mes_filtro }}">{% endif %}
+        <label for="aporte">Guardando por mês</label>
+        <input id="aporte" type="number" name="aporte" step="0.01" min="1" value="{{ aporte|stringformat:'.2f' }}">
+        <button type="submit" class="botao-secundario">Simular</button>
+    </form>
+    <div class="tabela-wrap">
+        <table>
+            <thead>
+                <tr><th>Prazo</th><th>Parado (sem render)</th><th>Poupança</th><th>100% do CDI, já sem IR</th></tr>
+            </thead>
+            <tbody>
+                {% for linha in simulacao %}
+                    <tr>
+                        <td>{{ linha.meses }} meses</td>
+                        <td>{{ linha.investido|brl }}</td>
+                        <td>{% if linha.poupanca is not None %}{{ linha.poupanca|brl }} <small class="muted">+{{ linha.ganho_poupanca|brl }}</small>{% else %}—{% endif %}</td>
+                        <td>{% if linha.cdi is not None %}<strong>{{ linha.cdi|brl }}</strong> <small class="muted">+{{ linha.ganho_cdi|brl }}</small>{% else %}—{% endif %}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <p class="ajuda">Valores aproximados, com depósito no fim de cada mês e as taxas atuais mantidas no período.</p>
+</section>
+
+<section class="card secao-planejamento">
+    <h2>Contas que subiram acima da inflação</h2>
+    {% if indicadores.ipca_12m.valor is None %}
+        <p class="ajuda">Aguardando o IPCA do Banco Central para comparar.</p>
+    {% else %}
+        <p class="ajuda">Compara a primeira e a última vez que cada conta recorrente aparece com o IPCA acumulado no mesmo intervalo.</p>
+        <div class="tabela-wrap">
+            <table>
+                <thead>
+                    <tr><th>Conta</th><th>De</th><th>Para</th><th>Aumento</th><th>Inflação</th><th>A mais por ano</th></tr>
+                </thead>
+                <tbody>
+                    {% for item in inflacao %}
+                        <tr>
+                            <td><strong>{{ item.descricao }}</strong><div class="muted">{{ item.origem }}</div></td>
+                            <td>{{ item.valor_inicial|brl }}<div class="muted">{{ item.mes_inicial }}</div></td>
+                            <td>{{ item.valor_final|brl }}<div class="muted">{{ item.mes_final }}</div></td>
+                            <td class="saldo-negativo">{{ item.variacao|percentual }}</td>
+                            <td>{{ item.inflacao|percentual }}</td>
+                            <td><strong>{{ item.impacto_anual|brl }}</strong></td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="6" class="ajuda">Nenhuma conta recorrente subiu acima da inflação.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+</section>
+
+<section class="card secao-planejamento">
+    <div class="cabecalho-painel">
+        <h2>Parcelas já contratadas</h2>
+        <span class="muted">Total a pagar: <strong>{{ compromissos.total_restante|brl }}</strong></span>
+    </div>
+    <p class="ajuda">Parcelas de cartão e consórcio a partir do próximo mês. A linha tracejada marca 30% da renda média.</p>
+    <div class="grafico-wrap grafico-barras">
+        <canvas id="grafico-parcelas"></canvas>
+    </div>
+    <div class="tabela-wrap">
+        <table>
+            <thead>
+                <tr><th>Compromisso</th><th>Parcela</th><th>Restantes</th><th>Total restante</th><th>Termina</th></tr>
+            </thead>
+            <tbody>
+                {% for item in compromissos.compromissos %}
+                    <tr>
+                        <td><strong>{{ item.descricao }}</strong><div class="muted">{{ item.origem }}</div></td>
+                        <td>{{ item.valor_parcela|brl }}</td>
+                        <td>{{ item.parcelas_restantes }}</td>
+                        <td>{{ item.total_restante|brl }}</td>
+                        <td>{{ item.termina }}</td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="5" class="ajuda">Nenhuma parcela futura.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="card secao-planejamento">
+    <h2>Vencimentos</h2>
+    <div class="grade-alertas">
+        <div>
+            <h3 class="subtitulo">Atrasadas</h3>
+            {% if alertas.atrasadas %}
+                <p class="ajuda">{{ alertas.valor_atrasado|brl }} em aberto · custo estimado do atraso {{ alertas.custo_atraso|brl }}</p>
+            {% endif %}
+            <ul class="lista-abertos">
+                {% for item in alertas.atrasadas %}
+                    <li>
+                        <a href="{{ item.url }}">
+                            <strong>{{ item.descricao }}</strong>
+                            <div class="muted">{{ item.origem }} · venceu em {{ item.data_vencimento|date:"d/m/Y" }} ({{ item.dias_atraso }} dias)</div>
+                        </a>
+                        <span>{{ item.valor|brl }}<br><small class="saldo-negativo">+{{ item.custo_estimado|brl }}</small></span>
+                    </li>
+                {% empty %}
+                    <li class="ajuda">Nenhuma conta atrasada.</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div>
+            <h3 class="subtitulo">Próximos 7 dias</h3>
+            <ul class="lista-abertos">
+                {% for item in alertas.proximas %}
+                    <li>
+                        <a href="{{ item.url }}">
+                            <strong>{{ item.descricao }}</strong>
+                            <div class="muted">{{ item.origem }} · vence em {{ item.data_vencimento|date:"d/m/Y" }}</div>
+                        </a>
+                        <span>{{ item.valor|brl }}</span>
+                    </li>
+                {% empty %}
+                    <li class="ajuda">Nada vencendo nos próximos dias.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</section>
+
+{{ dados_grafico|json_script:"dados-planejamento" }}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="{% static 'js/planejamento.js' %}"></script>
+{% endblock %}
