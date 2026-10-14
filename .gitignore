@@ -5,4 +5,3 @@ __pycache__
 staticfiles
 media
 static/img/*
-financas_familia/settings.py
