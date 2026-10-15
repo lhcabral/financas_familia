@@ -29,6 +29,9 @@
                 <a href="{% url 'cartoes:lista' %}?ano={{ ano_selecionado }}" class="{% if request.resolver_match.app_name == 'cartoes' %}ativo{% endif %}">Cartões</a>
                 <a href="{% url 'imoveis_transporte:lista' %}?ano={{ ano_selecionado }}" class="{% if request.resolver_match.app_name == 'imoveis_transporte' %}ativo{% endif %}">Imóveis e carro</a>
                 <a href="{% url 'planejamento:painel' %}?ano={{ ano_selecionado }}" class="{% if request.resolver_match.app_name == 'planejamento' %}ativo{% endif %}">Planejamento</a>
+                {% if user.is_staff %}
+                    <a href="{% url 'backup:painel' %}?ano={{ ano_selecionado }}" class="{% if request.resolver_match.app_name == 'backup' %}ativo{% endif %}">Backup</a>
+                {% endif %}
             </nav>
             <div class="sessao-usuario">
                 <p class="sidebar-nota">Controle mensal de {{ ano_selecionado }}.</p>

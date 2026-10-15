@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'cartoes',
     'imoveis_transporte',
     'planejamento',
+    'backup',
 ]
 
 MIDDLEWARE = [
@@ -153,3 +154,7 @@ LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/entrar/'
 
 PLANILHA_ORIGEM = BASE_DIR.parent / 'Despesas fixas e variáveis 2026.xlsx'
+
+BACKUP_DIR = Path(os.environ.get('BACKUP_DIR', BASE_DIR / 'backups'))
+# Desative se os backups agendados forem disparados por cron (manage.py executar_backups).
+BACKUP_AGENDADOR_ATIVO = os.environ.get('BACKUP_AGENDADOR_ATIVO', 'True').lower() in ('1', 'true', 'yes', 'on')

@@ -14,3 +14,7 @@ from django.core.wsgi import get_wsgi_application
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'financas_familia.settings')
 
 application = get_wsgi_application()
+
+from backup.agendador import iniciar as iniciar_agendador_backup  # noqa: E402
+
+iniciar_agendador_backup()

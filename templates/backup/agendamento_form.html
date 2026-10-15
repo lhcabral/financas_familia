@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block title %}Editar agendamento de backup{% endblock %}
+{% block kicker %}Backup{% endblock %}
+{% block heading %}Editar agendamento{% endblock %}
+
+{% block content %}
+{% url 'backup:painel' as voltar %}
+{% include "includes/form_padrao.html" with voltar=voltar %}
+{% endblock %}
